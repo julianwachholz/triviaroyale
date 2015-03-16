@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% from '_formhelpers.html' import render_field %}
+
+{% block content %}
+  <div class="row">
+    <div class="large-12 columns">
+    {% if question %}
+      <h1>Question #{{ question.id }}</h1>
+    {% else %}
+      <h1>New Question</h1>
+    {% endif %}
+
+      <form method="post">
+        <fieldset>
+          {% if question %}
+            <legend>Update existing question</legend>
+          {% else %}
+            <legend>Create a new question</legend>
+          {% endif %}
+
+          {{ render_field(form.question) }}
+          {{ render_field(form.answer) }}
+          {{ render_field(form.active) }}
+          {{ render_field(form.category_list, class='large-block-grid-4 small-block-grid-2') }}
+
+          <button type="submit" class="small primary">Save</button>
+          <a href="{{ url_for('question_list') }}" class="button small secondary">
+            Back
+          </a>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+{% endblock %}

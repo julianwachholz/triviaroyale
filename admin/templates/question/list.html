@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="row">
+    <div class="large-12 columns">
+
+      <h1>
+        Questions
+        {% if filter %}
+          <small>{{ filter }}</small>
+        {% endif %}
+      </h1>
+
+      <a href="{{ url_for('question_form') }}" class="button tiny primary">
+        New Question
+      </a>
+
+      {% if filter %}
+        <a href="{{ url_for('question_list') }}" class="button tiny secondary">
+          Show all
+        </a>
+      {% endif %}
+
+      <table width="100%">
+        <thead>
+          <tr>
+            <th scope="column">ID</th>
+            <th scope="column"><abbr title="Active?">A</abbr></th>
+            <th scope="column">Question</th>
+            <th scope="column">Answer</th>
+            <th scope="column">Categories</th>
+            <th scope="column">Numbers</th>
+            <th scope="column" width="150">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for question in question_list %}
+          <tr>
+            <td>{{ question.id }}</td>
+            <td>
+              {{ 'Y' if question.active else 'N' }}
+            </td>
+            <td>
+              <a href="{{ url_for('question_form', id=question.id) }}">
+                {{ question.question[:50] }}{{ '...' if question.question|length > 50 }}
+              </a>
+            </td>
+            <td>{{ question.primary_answer }}</td>
+            <td>{{ ', '.join(question.category_names) }}</td>
+            <td>
+              {{ question.times_solved }}/{{ question.times_played }}
+              ({{ question.solve_percentage }}%)
+            </td>
+            <td>
+              <a href="{{ url_for('question_form', id=question.id) }}">
+                Modify
+              </a>
+              <a href="{{ url_for('question_delete', id=question.id) }}">
+                Delete
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7">
+              {{ question_count }} Questions
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      {% include '_pagination.html' %}
+    </div>
+  </div>
+{% endblock %}

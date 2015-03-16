@@ -1,0 +1,8 @@
+*.py[cod]
+__pycache__
+
+*.db
+
+# vendors
+admin/static
+static/reconnecting-websocket.min.js
