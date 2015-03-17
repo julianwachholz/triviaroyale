@@ -4,12 +4,13 @@
  */
 var chat = null;
 
-var ws = new ReconnectingWebSocket('ws://' + window.location.host + '/ws');
+var ws = new ReconnectingWebSocket('ws://localhost:8765');
 
 ws.addEventListener('message', function (message) {
     var data = JSON.parse(message.data);
     chat.innerHTML += '<div class="message">' + data.text + '</div>';
     chat.scrollTop = chat.scrollHeight;
+    console.log(data.text);
 });
 
 document.addEventListener('DOMContentLoaded', function () {

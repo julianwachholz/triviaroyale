@@ -1,34 +1,39 @@
+#!/usr/bin/env python
+
 import asyncio
+import logging
+import websockets
+
+
+logger = logging.getLogger('websockets.server')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
+
+players = set()
 
 
 @asyncio.coroutine
-def player():
-    i = 1
-    while i < 10:
-        yield from asyncio.sleep(1.0)
-        print("player say")
-        print(loop.time())
-        i += 1
+def handler(ws, path):
+    players.add(ws)
+    while True:
+        message = yield from ws.recv()
+        if message is None:
+            players.remove(ws)
+            break
+
+        print("< {}: {}".format(ws, message))
+        asyncio.async(broadcast(message))
 
 
 @asyncio.coroutine
-def game():
-    print("game start")
-    i = 1
-    while i <= 5:
-        yield from asyncio.sleep(2.0)
-        print("game progress: {}".format(i))
-        print(loop.time())
-        i += 1
-    print("game stop")
-    loop.stop()
+def broadcast(message):
+    for ws in players:
+        if ws.open:
+            yield from ws.send(message)
+            print("> {}: {}".format(ws, message))
+
+server = websockets.serve(handler, 'localhost', 8765)
 
 loop = asyncio.get_event_loop()
-asyncio.async(game())
-asyncio.async(player())
-
+loop.run_until_complete(server)
 loop.run_forever()
-
-print("exited")
-
-loop.close()
