@@ -1,6 +1,6 @@
 (function (window, document) {
 
-var ws = new ReconnectingWebSocket('ws://localhost:8765', null, {
+var ws = new ReconnectingWebSocket('ws://'+window.location.host+':8765', null, {
     automaticOpen: false,
     maxReconnectAttempts: 5
 });
