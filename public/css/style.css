@@ -42,6 +42,25 @@ body {
   display: flex;
   flex-direction: column;
 }
+body.loading {
+  display: none;
+}
+
+#state {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(128, 128, 128, 0.75);
+  font: normal 400 48px/2 "Roboto", sans-serif;
+}
+#state.hidden {
+  display: none;
+}
 
 h1, h2 {
   font-weight: 300;
@@ -70,7 +89,7 @@ h1, h2 {
   justify-content: space-around;
 }
 .header-info span, .header-info a {
-  flex-grow: 1;
+  flex: 1 0;
   text-align: center;
 }
 
@@ -81,6 +100,9 @@ a {
 }
 a:hover {
   background: rgba(0,0,0,0.1);
+}
+p {
+  margin: .2em 0;
 }
 
 .page {
@@ -125,6 +147,7 @@ aside {
   position: relative;
   background: rgba(0,0,0,0.05);
   height: 1.3em;
+  box-shadow: 0 10px 25px #fcfcfc;
 }
 .timer div {
   position: absolute;
@@ -135,7 +158,7 @@ aside {
   text-align: center;
 }
 .timer-bar {
-  width: 62%;
+  /*width: 62%;*/
   background: rgba(0,255,0,0.25);
 }
 
@@ -143,6 +166,9 @@ aside {
   flex: 1;
   overflow-y: scroll;
   padding: 1em;
+}
+.chat .system {
+  color: #888;
 }
 .chat p {
   display: flex;

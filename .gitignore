@@ -5,5 +5,4 @@ __pycache__
 
 # vendors
 admin/static
-static/reconnecting-websocket.min.js
-static/bower_components
+public/reconnecting-websocket.min.js

@@ -16,24 +16,48 @@ class Game(object):
 
     def __init__(self):
         self.state = self.STATE_IDLE
-        self.players = set()
+        self.clients = set()
+        self.players = {}
 
     def join(self, ws):
-        self.players.add(ws)
+        if ws not in self.clients:
+            self.clients.add(ws)
+            self.players[ws] = {}
 
     def leave(self, ws):
-        self.players.remove(ws)
+        if ws in self.clients:
+            self.clients.remove(ws)
+            del self.players[ws]
+
+    def setName(self, ws, name):
+        self.players[ws]['name'] = name
 
 
 game = Game()
 
+
 @asyncio.coroutine
-def game_handle(ws, message):
-    data = json.loads(message)
-    if data.get('ping'):
+def game_handle(ws, data):
+    keys = data.keys()
+
+    if 'ping' in keys:
         answer = json.dumps({'pong': data.get('ping')})
-        print(answer)
         yield from ws.send(answer)
+
+    if 'login' in keys:
+        login = data.get('login')
+        game.setName(ws, login)
+        answer = json.dumps({'setinfo': {
+            'playername': login,
+        }})
+        yield from ws.send(answer)
+
+    if 'text' in keys:
+        message = json.dumps({
+            'player': game.players[ws]['name'],
+            'text': data.get('text'),
+        })
+        asyncio.async(broadcast(message))
 
 
 @asyncio.coroutine
@@ -44,17 +68,12 @@ def handler(ws, path):
         if message is None:
             game.leave(ws)
             break
-
         data = json.loads(message)
-
-        if data.get('text'):
-            asyncio.async(broadcast(data.get('text')))
-        asyncio.async(game_handle(ws, message))
+        asyncio.async(game_handle(ws, data))
 
 
 @asyncio.coroutine
-def broadcast(text):
-    message = json.dumps({'text': text})
+def broadcast(message):
     for ws in game.players:
         if ws.open:
             yield from ws.send(message)
