@@ -1,0 +1,170 @@
+
+@font-face {
+  font-family: "Roboto";
+  src: url("../font/roboto/Roboto-Thin.ttf");
+  font-weight: 200; }
+
+@font-face {
+  font-family: "Roboto";
+  src: url("../font/roboto/Roboto-Light.ttf");
+  font-weight: 300; }
+
+@font-face {
+  font-family: "Roboto";
+  src: url("../font/roboto/Roboto-Regular.ttf");
+  font-weight: 400; }
+
+@font-face {
+  font-family: "Roboto";
+  src: url("../font/roboto/Roboto-Medium.ttf");
+  font-weight: 500; }
+
+@font-face {
+  font-family: "Roboto";
+  src: url("../font/roboto/Roboto-Bold.ttf");
+  font-weight: 700; }
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font: normal 16px/1.64 "Roboto", sans-serif;
+  color: #222;
+  background: #fcfcfc;
+  height: 100%;
+  min-height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2 {
+  font-weight: 300;
+  line-height: 1;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+.header-item {
+}
+.header-title {
+  flex: 4;
+  text-align: center;
+}
+.header-info {
+  flex: 1;
+  display: flex;
+  line-height: 50px;
+  align-items: stretch;
+  justify-content: space-around;
+}
+.header-info span, .header-info a {
+  flex-grow: 1;
+  text-align: center;
+}
+
+a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+a:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.page {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+}
+main {
+  flex: 4;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+aside {
+  flex: 1;
+  align-self: stretch;
+}
+
+.question-container {
+  flex: 1;
+  padding: 1em;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+.question-container p {
+  text-align: center;
+}
+.question {
+  font: normal 300 32px/1.2 "Roboto", sans-serif;
+  padding: 0 10%;
+  align-self: center;
+}
+.question-info {
+  opacity: 0.5;
+}
+.question-categories {
+}
+
+.timer {
+  font: normal 500 16px/1.5 "Roboto", sans-serif;
+  position: relative;
+  background: rgba(0,0,0,0.05);
+  height: 1.3em;
+}
+.timer div {
+  position: absolute;
+  height: 1.3em;
+}
+.timer-value {
+  width: 100%;
+  text-align: center;
+}
+.timer-bar {
+  width: 62%;
+  background: rgba(0,255,0,0.25);
+}
+
+.chat {
+  flex: 1;
+  overflow-y: scroll;
+  padding: 1em;
+}
+.chat p {
+  display: flex;
+}
+.chat span {
+  flex: 1;
+}
+.chat time {
+  align-self: flex-end;
+  opacity: 0.1;
+}
+.chat p:hover time {
+  opacity: 0.5;
+}
+.chat-form {
+}
+.chat-form button {
+  display: none;
+}
+input {
+  width: 100%;
+  border: 1px solid rgba(0,0,0,.5);
+  font: normal 400 16px/1.64 "Roboto", sans-serif;
+  padding: .2em .4em;
+}

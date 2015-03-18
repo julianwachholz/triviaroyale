@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import asyncio
+import json
 import logging
 import websockets
 
@@ -9,28 +10,55 @@ logger = logging.getLogger('websockets.server')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
-players = set()
+
+class Game(object):
+    STATE_IDLE = 'idle'
+
+    def __init__(self):
+        self.state = self.STATE_IDLE
+        self.players = set()
+
+    def join(self, ws):
+        self.players.add(ws)
+
+    def leave(self, ws):
+        self.players.remove(ws)
+
+
+game = Game()
+
+@asyncio.coroutine
+def game_handle(ws, message):
+    data = json.loads(message)
+    if data.get('ping'):
+        answer = json.dumps({'pong': data.get('ping')})
+        print(answer)
+        yield from ws.send(answer)
 
 
 @asyncio.coroutine
 def handler(ws, path):
-    players.add(ws)
+    game.join(ws)
     while True:
         message = yield from ws.recv()
         if message is None:
-            players.remove(ws)
+            game.leave(ws)
             break
 
-        print("< {}: {}".format(ws, message))
-        asyncio.async(broadcast(message))
+        data = json.loads(message)
+
+        if data.get('text'):
+            asyncio.async(broadcast(data.get('text')))
+        asyncio.async(game_handle(ws, message))
 
 
 @asyncio.coroutine
-def broadcast(message):
-    for ws in players:
+def broadcast(text):
+    message = json.dumps({'text': text})
+    for ws in game.players:
         if ws.open:
             yield from ws.send(message)
-            print("> {}: {}".format(ws, message))
+
 
 server = websockets.serve(handler, 'localhost', 8765)
 
