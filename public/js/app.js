@@ -46,6 +46,9 @@ ws.addEventListener('message', function (message) {
     if (data.system) {
         chatMessage(data.system, true);
     }
+    if (data.prompt) {
+        window.modal(data.prompt, data.data);
+    }
     if (data.setinfo) {
         for (key in data.setinfo) {
             document.getElementById(key).innerHTML = data.setinfo[key];
@@ -102,10 +105,16 @@ function modalPrompt(prompt, callback, allowEmpty) {
     });
 }
 
-window.modal = function (which) {
+window.modal = function (which, data) {
     if (which === 'login') {
         modalPrompt('Please choose your player name!', function (name) {
             ws.send(JSON.stringify({login: name}));
+        });
+    }
+    if (which === 'password') {
+        modalPrompt('Enter password for ' + data.login + ':', function (password) {
+            data.password = password;
+            ws.send(JSON.stringify(data));
         });
     }
 };
@@ -157,12 +166,26 @@ function escapeHTML(text) {
 }
 
 function animateTimer(timer) {
-    var bar = document.querySelector('.timer-bar'), seconds;
-    if (bar) {
-        seconds = parseFloat(bar.getAttribute('data-time-left'));
-        bar.style.transition = 'width ' + (seconds - 0.1) + 's linear';
+    var timerBar = document.querySelector('.timer-bar'),
+        timerValue = document.querySelector('.timer-value span'),
+        seconds;
+
+    if (timerBar) {
+        seconds = parseFloat(timerBar.getAttribute('data-time-left'));
+        timerBar.style.transition = 'width ' + (seconds - 0.1) + 's linear, background ' + (seconds - 0.1) + 's linear';
+        (function countdown(seconds) {
+            if (seconds > 0) {
+                timerValue.innerHTML = seconds.toFixed(1);
+                setTimeout(function () { countdown(seconds - 0.1) }, 100);
+            } else {
+                timerValue.innerHTML = '0.0';
+            }
+        }(seconds));
         setTimeout(function () {
-            bar.style.width = '0%';
+            timerBar.style.width = '0%';
+            if (!timerBar.classList.contains('colorless')) {
+                timerBar.style.backgroundColor = 'rgba(255,0,0,0.25)';
+            }
         }, 100);
     }
 }

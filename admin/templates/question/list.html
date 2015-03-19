@@ -45,10 +45,10 @@
               </a>
             </td>
             <td>{{ question.primary_answer }}</td>
-            <td>{{ ', '.join(question.category_names) }}</td>
+            <td>{{ question.category_names }}</td>
             <td>
               {{ question.times_solved }}/{{ question.times_played }}
-              ({{ question.solve_percentage }}%)
+              ({{ question.solve_percentage|int }}%)
             </td>
             <td>
               <a href="{{ url_for('question_form', id=question.id) }}">

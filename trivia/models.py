@@ -1,4 +1,6 @@
 import os
+import re
+import time
 from datetime import datetime
 
 from pony.orm import *
@@ -46,26 +48,31 @@ class Question(db.Entity):
     player = Optional('Player')
 
     @property
-    def answers(self):
-        """Answers normalized to lower case."""
-        return self.answer.lower().split('|')
-
-    @property
     def primary_answer(self):
         return self.answer.split('|')[0]
 
     @property
+    def answer_re(self):
+        if not hasattr(self, '_answer_re'):
+            pattern = r'\b{}\b'.format(self.answer)
+            self._answer_re = re.compile(pattern, re.IGNORECASE)
+        return self._answer_re
+
+    @property
     def category_names(self):
-        return [c.name for c in self.categories.order_by(Category.name)]
+        if not hasattr(self, '_category_names'):
+            with db_session():
+                self._category_names = ', '.join([c.name for c in self.categories.order_by(Category.name)])
+        return self._category_names
 
     @property
     def solve_percentage(self):
         if self.times_played == 0:
             return 0
-        return self.times_solved / self.times_played
+        return self.times_solved / self.times_played * 100
 
     def check_answer(self, answer):
-        return answer.lower() in self.answers
+        return self.answer_re.search(answer) is not None
 
 
 class Player(db.Entity):
@@ -89,12 +96,17 @@ class Player(db.Entity):
     def before_update(self):
         self.date_modified = datetime.now()
 
+    def has_password(self):
+        return bool(self.password_hash)
+
     def set_password(self, password):
         self.password_hash = bcrypt_sha256.encrypt(password, rounds=self.BCRYPT_ROUNDS)
 
     def check_password(self, password):
-        if not self.password_hash:
+        if not self.has_password():
             return True
+        if password is None:
+            return False
         return bcrypt_sha256.verify(password, self.password_hash)
 
 
@@ -111,23 +123,38 @@ class Round(db.Entity):
     time_taken = Optional(float)
     points = Required(int, default=0)
 
-    def check_answer(self, player, answer):
-        if self.question.check_answer(answer):
-            self.solved = True
-            self.solver = player
-            self.time_taken = datetime.now() - self.start_time
-            return True
-        return False
+    @classmethod
+    def new(cls, round_start):
+        """
+        Select a question and start a new round.
 
+        """
+        question = select(
+            q for q in Question if q.active and (q.last_played is None or q.last_played < round_start)
+        ).random(1)[0]
+
+        return cls(question=question)
+
+    @db_session
+    def solved_by(self, player):
+        self.solved = True
+        self.solver = player
+        self.time_taken = datetime.now().timestamp() - self.start_time.timestamp()
+
+    @db_session
     def end_round(self):
         """
         Update the question statistics after a round.
 
         """
-        self.question.last_played = datetime.now()
-        self.question.times_played += 1
+        self.question.set(
+            last_played=datetime.now(),
+            times_played=self.question.times_played + 1
+        )
         if self.solved:
-            self.question.times_solved += 1
+            self.question.set(
+                times_solved=self.question.times_solved + 1
+            )
 
 
 class Report(db.Entity):

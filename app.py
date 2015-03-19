@@ -43,7 +43,7 @@ class GameController(object):
         if ws in self.clients:
             if ws in self.players:
                 asyncio.async(broadcast({
-                    'system': "{} left.".format(self.players[ws].name),
+                    'system': "{} left.".format(self.players[ws]['name']),
                 }))
                 del self.players[ws]
             self.clients.remove(ws)
@@ -80,8 +80,19 @@ class GameController(object):
                     player['name'] = new_name
 
     @db_session
+    def _set_password(self, ws, password):
+        player = self.players[ws]
+        player = Player[self.players[ws]['id']]
+        player.set_password(password)
+        asyncio.async(send(ws, {
+            'system': 'Password successfully changed!',
+        }))
+
+    @db_session
     def login(self, ws, name, password=None):
         if ws in self.players.keys():
+            if password is not None:
+                return self._set_password(ws, password)
             return self._rename_player(ws, name)
 
         player = get(p for p in Player if p.name == name)
@@ -91,10 +102,17 @@ class GameController(object):
             commit()
         elif not player.check_password(password):
             if password is None:
-                # password required
+                asyncio.async(send(ws, {
+                    'prompt': 'password',
+                    'data': {'login': name},
+                }))
                 return
             else:
-                # wrong password
+                asyncio.async(send(ws, {
+                    'system': 'Invalid username/password! '
+                              '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
+                              'Try again</a>'.format(name),
+                }))
                 return
 
         self.players[ws] = {
@@ -102,7 +120,22 @@ class GameController(object):
             'name': player.name,
         }
         self._set_name(ws, player.name)
+
+        if not player.has_password():
+            asyncio.async(send(ws, {
+                'system': 'You currently have no password, '
+                          '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
+                          'click here to set a password!</a>'.format(player.name),
+            }))
         asyncio.async(send(ws, {'setinfo': trivia.get_round_info()}))
+
+    def chat(self, ws, text):
+        player_name = self.players[ws]['name']
+        asyncio.async(broadcast({
+            'player': player_name,
+            'text': text,
+        }))
+        asyncio.async(trivia.chat(player_name, text))
 
 
 game = GameController()
@@ -116,13 +149,10 @@ def game_handle(ws, data):
         asyncio.async(send(ws, {'pong': data.get('ping')}))
 
     if 'login' in keys:
-        game.login(ws, data.get('login'))
+        game.login(ws, data.get('login'), data.get('password', None))
 
     if 'text' in keys:
-        asyncio.async(broadcast({
-            'player': game.players[ws]['name'],
-            'text': data.get('text'),
-        }))
+        game.chat(ws, data.get('text'))
 
 
 @asyncio.coroutine
