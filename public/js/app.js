@@ -1,10 +1,11 @@
 (function (window, document) {
 
-var ws = new ReconnectingWebSocket('ws://'+window.location.host+':8765', null, {
-    automaticOpen: false,
-    maxReconnectAttempts: 5
-});
-var pingTimeout;
+var WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8765',
+    ws = new ReconnectingWebSocket(WS_ADDR, null, {
+        automaticOpen: false,
+        maxReconnectAttempts: 5
+    }),
+    pingTimeout;
 
 ws.addEventListener('open', function (event) {
     state.innerHTML = '<p>Connected! :)</p>';
@@ -18,9 +19,7 @@ ws.addEventListener('open', function (event) {
     if (name) {
         ws.send(JSON.stringify({login: name}));
     } else {
-        modalPrompt('Please choose your player name!', function (name) {
-            ws.send(JSON.stringify({login: name}));
-        });
+        window.modal('login');
     }
 });
 ws.addEventListener('connecting', function (event) {
@@ -44,12 +43,14 @@ ws.addEventListener('message', function (message) {
     if (data.player && data.text) {
         chatMessage(data.player + ': ' + data.text);
     }
+    if (data.system) {
+        chatMessage(data.system, true);
+    }
     if (data.setinfo) {
         for (key in data.setinfo) {
             document.getElementById(key).innerHTML = data.setinfo[key];
             if (key === 'playername') {
                 localStorage.setItem('playername', data.setinfo[key]);
-                chatMessage('Welcome, <b>'+data.setinfo[key]+'</b>! Have fun playing Trivia!', true);
                 chatinput.disabled = false;
                 chatinput.focus();
             }
@@ -73,7 +74,8 @@ function checkLatency(time) {
     }, 5000);
 }
 
-function modalPrompt(prompt, callback) {
+function modalPrompt(prompt, callback, allowEmpty) {
+    var wasDisabled = chatinput.disabled;
     form.removeEventListener('submit', chatHandler);
     chatinput.disabled = false;
     chatinput.placeholder = prompt;
@@ -82,11 +84,13 @@ function modalPrompt(prompt, callback) {
     form.addEventListener('submit', function modalHandler(event) {
         var value = chatinput.value;
         event.preventDefault();
-        if (value) {
+        if (value || allowEmpty) {
             chatinput.placeholder = '';
             form.removeEventListener('submit', modalHandler);
             form.addEventListener('submit', chatHandler);
-            chatinput.disabled = true;
+            if (wasDisabled) {
+                chatinput.disabled = true;
+            }
             callback(value);
         } else {
             alert("Please enter a value!");
@@ -94,6 +98,14 @@ function modalPrompt(prompt, callback) {
         chatinput.value = '';
     });
 }
+
+window.modal = function (which) {
+    if (which === 'login') {
+        modalPrompt('Please choose your player name!', function (name) {
+            ws.send(JSON.stringify({login: name}));
+        });
+    }
+};
 
 /**
  * append a chat message
@@ -105,6 +117,7 @@ function chatMessage(text, system) {
         text = '<strong>System:</strong> ' + text;
     } else {
         text = escapeHTML(text);
+        text = autolink(text);
     }
     message.innerHTML = '<span>' + text + '</span>';
     message.innerHTML += '<time>' + (now.getHours() < 10 ? '0' : '') + now.getHours() + ':'
@@ -112,14 +125,26 @@ function chatMessage(text, system) {
                       + (now.getSeconds() < 10 ? '0' : '') + now.getSeconds() + '</time>';
     chat.appendChild(message);
     chat.scrollTop = chat.scrollHeight;
+
+    if (chat.childElementCount > 100) {
+        chat.removeChild(chat.childNodes[0]);
+    }
 }
 
 function chatHandler(event) {
     event.preventDefault();
-    ws.send(JSON.stringify({text: chatinput.value}));
-    chatinput.value = '';
+    if (chatinput.value.length > 0) {
+        ws.send(JSON.stringify({text: chatinput.value}));
+        chatinput.value = '';
+    }
 }
 
+function autolink(text) {
+    return text.replace(
+        /\b(https?:\/\/[\-A-Z0-9+\u0026\u2019@#\/%?=()~_|!:,.;]*[\-A-Z0-9+\u0026@#\/%=~()_|])\b/ig,
+        '<a href="$1" target="_blank">$1</a>'
+    );
+}
 function escapeHTML(text) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
@@ -131,13 +156,19 @@ document.addEventListener('DOMContentLoaded', function () {
     playername.addEventListener('click', function (event) {
         event.preventDefault();
         modalPrompt('Change your player name!', function (name) {
-            ws.send(JSON.stringify({login: name}));
-        });
+            if (name) {
+                ws.send(JSON.stringify({login: name}));
+            }
+        }, true);
     });
 });
 
 window.addEventListener('load', function () {
     body.classList.remove('loading');
+});
+
+window.addEventListener('keydown', function () {
+    chatinput.focus();
 });
 
 })(window, document);
