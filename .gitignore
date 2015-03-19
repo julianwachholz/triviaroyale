@@ -6,3 +6,5 @@ __pycache__
 # vendors
 admin/static
 public/reconnecting-websocket.min.js
+
+env

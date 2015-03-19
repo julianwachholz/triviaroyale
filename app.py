@@ -1,44 +1,138 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+#!/usr/bin/env python
 
-import os
+import asyncio
+import json
 import logging
-
-import gevent
-from flask import Flask, render_template
-from flask_sockets import Sockets
-from redis.client import Redis
-
-from trivia.service import TriviaChat
+import os
+import ssl
+import websockets
 
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost/0')
-
-app = Flask(__name__)
-socket = Sockets(app)
-redis = Redis.from_url(REDIS_URL)
+logger = logging.getLogger('websockets.server')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 
-chat = TriviaChat(app, redis)
-chat.start()
+class GameController(object):
+    """
+    Game controller handling users and game interaction.
+
+    """
+    def __init__(self):
+        self.clients = set()
+        self.players = {}
+
+    def join(self, ws):
+        if ws not in self.clients:
+            self.clients.add(ws)
+            self.players[ws] = {}
+
+    def leave(self, ws):
+        if ws in self.clients:
+            self.clients.remove(ws)
+            name = self.players[ws].get('name', None)
+            if name is not None:
+                asyncio.async(broadcast({
+                    'system': "{} left.".format(name),
+                }))
+            del self.players[ws]
+
+    def setName(self, ws, name, prompt=False):
+        oldname = self.players[ws].get('name', None)
+
+        if oldname == name:
+            asyncio.async(send(ws, {
+                'system': 'You are already known as <b>{}</b>.'.format(name),
+            }))
+            return
+
+        if not self._checkNameAvailable(name):
+            asyncio.async(send(ws, {
+                'system': 'The name <b>{}</b> is taken, please <a href="#" onclick="modal(\'login\');return false;">'
+                          'choose a different one</a>.'.format(name),
+            }))
+            return
+
+        if oldname is not None:
+            asyncio.async(broadcast({
+                'system': "{} is now known as <b>{}</b>.".format(oldname, name),
+            }))
+        else:
+            asyncio.async(broadcast({
+                'system': "{} joined.".format(name),
+            }))
+
+        self.players[ws]['name'] = name
+        asyncio.async(send(ws, {'setinfo': {
+            'playername': name,
+        }}))
+
+    def _checkNameAvailable(self, name):
+        for ws, player in self.players.items():
+            if player.get('name', None) == name:
+                return False
+        return True
+
+game = GameController()
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+@asyncio.coroutine
+def game_handle(ws, data):
+    keys = data.keys()
+
+    if 'ping' in keys:
+        asyncio.async(send(ws, {'pong': data.get('ping')}))
+
+    if 'login' in keys:
+        game.setName(ws, data.get('login'))
+
+    if 'text' in keys:
+        asyncio.async(broadcast({
+            'player': game.players[ws]['name'],
+            'text': data.get('text'),
+        }))
 
 
-@socket.route('/ws')
-def websocket(ws):
-    chat.register(ws)
+@asyncio.coroutine
+def handler(ws, path):
+    game.join(ws)
+    while True:
+        message = yield from ws.recv()
+        if message is None:
+            game.leave(ws)
+            break
+        data = json.loads(message)
+        asyncio.async(game_handle(ws, data))
+        if 'ping' not in data:
+            yield from asyncio.sleep(0.25)  # message throttling
 
-    while not ws.closed:
-        gevent.sleep(0.1)
-        message = ws.receive()
 
-        if message:
-            logger.info('RECV {}'.format(message))
-            TriviaChat.publish(redis, message)
+@asyncio.coroutine
+def send(ws, message):
+    message = json.dumps(message)
+    if ws.open:
+        yield from ws.send(message)
+
+
+@asyncio.coroutine
+def broadcast(message):
+    message = json.dumps(message)
+    for ws in game.clients:
+        if ws.open:
+            yield from ws.send(message)
+
+
+if __name__ == '__main__':
+    listen_ip = os.environ.get('LISTEN_IP', 'localhost')
+    listen_port = int(os.environ.get('LISTEN_PORT', 8765))
+
+    if 'CERT_FILE' in os.environ and 'CERT_KEY' in os.environ:
+        secure = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        secure.load_cert_chain(os.environ['CERT_FILE'], os.environ['CERT_KEY'])
+    else:
+        secure = None
+
+    server = websockets.serve(handler, listen_ip, listen_port, ssl=secure)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(server)
+    loop.run_forever()
