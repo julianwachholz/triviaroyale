@@ -7,6 +7,9 @@ import os
 import ssl
 import websockets
 
+from trivia.game import TriviaGame
+from trivia.models import *
+
 
 logger = logging.getLogger('websockets.server')
 logger.setLevel(logging.DEBUG)
@@ -23,55 +26,75 @@ class GameController(object):
         self.players = {}
 
     def join(self, ws):
+        """
+        Add the client to the list of connected ones.
+        This doesn't start interaction yet, though.
+
+        """
         if ws not in self.clients:
             self.clients.add(ws)
-            self.players[ws] = {}
 
     def leave(self, ws):
+        """
+        Remove the client from the connected list.
+        Also remove the Player object if the client was logged in.
+
+        """
         if ws in self.clients:
-            self.clients.remove(ws)
-            name = self.players[ws].get('name', None)
-            if name is not None:
+            if ws in self.players:
                 asyncio.async(broadcast({
-                    'system': "{} left.".format(name),
+                    'system': "{} left.".format(self.players[ws].name),
                 }))
-            del self.players[ws]
+                del self.players[ws]
+            self.clients.remove(ws)
 
-    def setName(self, ws, name, prompt=False):
-        oldname = self.players[ws].get('name', None)
-
-        if oldname == name:
-            asyncio.async(send(ws, {
-                'system': 'You are already known as <b>{}</b>.'.format(name),
-            }))
-            return
-
-        if not self._checkNameAvailable(name):
-            asyncio.async(send(ws, {
-                'system': 'The name <b>{}</b> is taken, please <a href="#" onclick="modal(\'login\');return false;">'
-                          'choose a different one</a>.'.format(name),
-            }))
-            return
-
-        if oldname is not None:
-            asyncio.async(broadcast({
-                'system': "{} is now known as <b>{}</b>.".format(oldname, name),
-            }))
-        else:
-            asyncio.async(broadcast({
-                'system': "{} joined.".format(name),
-            }))
-
-        self.players[ws]['name'] = name
+    def _set_name(self, ws, name, old_name=None):
         asyncio.async(send(ws, {'setinfo': {
             'playername': name,
         }}))
+        if old_name is None:
+            asyncio.async(broadcast({
+                'system': "{} joined.".format(name),
+            }))
+        else:
+            asyncio.async(broadcast({
+                'system': "{} is now known as <b>{}</b>.".format(old_name, name),
+            }))
 
-    def _checkNameAvailable(self, name):
-        for ws, player in self.players.items():
-            if player.get('name', None) == name:
-                return False
-        return True
+    def _rename_player(self, ws, new_name):
+        player = self.players[ws]
+
+        if player.name == name:
+            asyncio.async(send(ws, {
+                'system': 'You are already known as <b>{}</b>.'.format(new_name),
+            }))
+        else:
+            if exists(p for p in Player if p.name == name):
+                pass  # taken!
+            else:
+                self._set_name(ws, name, old_name=player.name)
+                player.name = name
+
+    @db_session
+    def login(self, ws, name, password=None):
+        if ws in self.players.keys():
+            return self._rename_player(ws, name)
+
+        player = get(p for p in Player if p.name == name)
+
+        if player is None:
+            player = Player(name=name)
+        elif not player.check_password(password):
+            if password is None:
+                # password required
+                return
+            else:
+                # wrong password
+                return
+
+        self.players[ws] = player
+        self._set_name(ws, player.name)
+
 
 game = GameController()
 
@@ -84,7 +107,7 @@ def game_handle(ws, data):
         asyncio.async(send(ws, {'pong': data.get('ping')}))
 
     if 'login' in keys:
-        game.setName(ws, data.get('login'))
+        game.login(ws, data.get('login'))
 
     if 'text' in keys:
         asyncio.async(broadcast({
@@ -133,6 +156,9 @@ if __name__ == '__main__':
         secure = None
 
     server = websockets.serve(handler, listen_ip, listen_port, ssl=secure)
+    trivia = TriviaGame(broadcast)
+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(server)
+    loop.run_until_complete(trivia.run())
     loop.run_forever()

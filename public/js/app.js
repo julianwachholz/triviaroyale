@@ -124,8 +124,10 @@ function chatMessage(text, system) {
                       + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes() + ':'
                       + (now.getSeconds() < 10 ? '0' : '') + now.getSeconds() + '</time>';
     chat.appendChild(message);
-    chat.scrollTop = chat.scrollHeight;
 
+    if (chat.scrollHeight - chat.scrollTop < 500) {
+        chat.scrollTop = chat.scrollHeight;
+    }
     if (chat.childElementCount > 100) {
         chat.removeChild(chat.childNodes[0]);
     }

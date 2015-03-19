@@ -24,157 +24,98 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/category/')
-@db_session
-def category_list():
-    page = int(request.args.get('p', 1))
-    if page < 1:
-        page = 1
-    pagesize = 10
+def make_admin(name, model, form_class, query, get_form_kwargs=None, count_query=None):
+    if get_form_kwargs is None:
+        get_form_kwargs = lambda obj: {}
 
-    categories = select((c.id, c.name, count(c.questions)) for c in Category)
-    category_count = count(c for c in Category)
+    @app.route('/{}/'.format(name), endpoint='{}_list'.format(name))
+    @db_session
+    def model_list():
+        page = int(request.args.get('p', 1))
+        if page < 1:
+            page = 1
+        pagesize = 10
 
-    return render_template(
-        'category/list.html',
-        page=page,
-        pages=int(math.ceil(category_count / pagesize)),
-        category_list=categories.page(page, pagesize),
-        category_count=category_count,
-    )
+        objects = query()
+        object_count = count(count_query() if count_query else objects)
 
+        return render_template(
+            '{}/list.html'.format(name),
+            page=page,
+            pages=int(math.ceil(object_count / pagesize)),
+            **{
+                '{}_list'.format(name): objects.page(page, pagesize),
+                '{}_count'.format(name): object_count,
+            }
+        )
 
-@app.route('/category/create/', methods=['GET', 'POST'])
-@app.route('/category/<int:id>/', methods=['GET', 'POST'])
-@db_session
-def category_form(id=None):
-    category = None
-    if id:
-        category = Category[id]
-    form = CategoryForm(request.form, category)
+    @app.route('/{}/create/'.format(name), endpoint='{}_form'.format(name), methods=['GET', 'POST'])
+    @app.route('/{}/<int:id>/'.format(name), endpoint='{}_form'.format(name), methods=['GET', 'POST'])
+    @db_session
+    def model_form(id=None):
+        object = None
+        if id:
+            object = model[id]
 
-    if request.method == 'POST' and form.validate():
-        if category:
-            category.set(name=form.name.data)
-            flash('Category updated!', 'success')
-        else:
-            Category(name=form.name.data)
-            flash('Category created!', 'success')
-        return redirect(url_for('category_list'))
+        form_kwargs = get_form_kwargs(object)
+        form_kwargs.update({
+            'obj': object,
+        })
+        form = form_class(request.form, **form_kwargs)
 
-    return render_template(
-        'category/form.html',
-        category=category,
-        form=form,
-    )
+        if request.method == 'POST' and form.validate():
+            if object:
+                object.set(**form.get_data())
+                flash('{} updated!'.format(name.title()), 'success')
+            else:
+                model(**form.get_data())
+                flash('{} created!'.format(name.title()), 'success')
+            return redirect('/{}/'.format(name))
 
+        return render_template(
+            '{}/form.html'.format(name),
+            form=form,
+            **{name: object}
+        )
 
-@app.route('/category/<int:id>/delete/', methods=['GET', 'POST'])
-@db_session
-def category_delete(id):
-    category = Category[id]
+    @app.route('/{}/<int:id>/delete/'.format(name), endpoint='{}_delete'.format(name), methods=['GET', 'POST'])
+    @db_session
+    def model_delete(id):
+        object = model[id]
 
-    if request.method == 'POST':
-        category.delete()
-        flash('Category deleted!', 'info')
-        return redirect(url_for('category_list'))
+        if request.method == 'POST':
+            object.delete()
+            flash('{} deleted!'.format(name.title()), 'info')
+            return redirect('/{}/'.format(name))
 
-    return render_template(
-        'category/confirm_delete.html',
-        category=category,
-    )
+        return render_template(
+            '{}/confirm_delete.html'.format(name),
+            **{name: object}
+        )
 
-
-@app.route('/question/')
-@db_session
-def question_list():
-    context = {}
-    questions = select(q for q in Question)
-
-    if 'c' in request.args:
-        try:
-            category = Category[int(request.args.get('c'))]
-            context['filter'] = 'in {}'.format(category.name)
-            questions = questions.filter(lambda q: category in q.categories)
-        except ObjectNotFound:
-            pass
-
-    question_count = count(questions)
-    questions = questions.order_by(Question.id)
-
-    pagesize = 10
-    page = int(request.args.get('p', 1))
-    pages = int(math.ceil(question_count / pagesize))
-    if 1 > page > pages:
-        page = 1
-
-    context['page'] = page
-    context['pages'] = pages
-
-    return render_template(
-        'question/list.html',
-        question_list=questions.page(page, pagesize),
-        question_count=question_count,
-        **context
-    )
+make_admin(
+    name='category',
+    model=Category,
+    form_class=CategoryForm,
+    query=lambda: select((c.id, c.name, count(c.questions)) for c in Category),
+    count_query=lambda: select(c for c in Category)
+)
 
 
-@app.route('/question/create/', methods=['GET', 'POST'])
-@app.route('/question/<int:id>/', methods=['GET', 'POST'])
-@db_session
-def question_form(id=None):
-    question = None
-    if id:
-        question = Question[id]
-
-    form_kwargs = {
-        'obj': question,
+def get_question_form_kwargs(obj):
+    if not obj:
+        return {}
+    return {
+        'category_list': [c.id for c in obj.categories],
     }
 
-    if question:
-        form_kwargs['category_list'] = [c.id for c in question.categories]
-
-    form = QuestionForm(request.form, **form_kwargs)
-    form.category_list.choices = select((c.id, c.name) for c in Category)[:]
-
-    if request.method == 'POST' and form.validate():
-        data = {
-            'question': form.question.data,
-            'answer': form.answer.data,
-            'active': form.active.data,
-            'categories': [Category[id] for id in form.category_list.data]
-        }
-
-        if question:
-            question.set(**data)
-            flash('Question updated!', 'success')
-        else:
-            question = Question(**data)
-            flash('Question created!', 'success')
-
-        return redirect(url_for('question_list'))
-
-    return render_template(
-        'question/form.html',
-        question=question,
-        form=form,
-    )
-
-
-@app.route('/question/<int:id>/delete/', methods=['GET', 'POST'])
-@db_session
-def question_delete(id):
-    question = Question[id]
-
-    if request.method == 'POST':
-        question.delete()
-        flash('Question deleted!', 'info')
-        return redirect(url_for('question_list'))
-
-    return render_template(
-        'question/confirm_delete.html',
-        question=question,
-    )
+make_admin(
+    name='question',
+    model=Question,
+    form_class=QuestionForm,
+    query=lambda: select(q for q in Question),
+    get_form_kwargs=get_question_form_kwargs
+)
 
 
 if __name__ == '__main__':
