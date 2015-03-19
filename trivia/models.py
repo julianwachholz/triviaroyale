@@ -129,9 +129,15 @@ class Round(db.Entity):
         Select a question and start a new round.
 
         """
-        question = select(
-            q for q in Question if q.active and (q.last_played is None or q.last_played < round_start)
-        ).random(1)[0]
+        try:
+            question = select(
+                q for q in Question if q.active and (q.last_played is None or q.last_played < round_start)
+            ).random(1)[0]
+        except IndexError:
+            half_hour_ago = datetime.now() - datetime.timedelta(minutes=30)
+            question = select(
+                q for q in Question if q.active and q.last_played < half_hour_ago
+            ).random(1)[0]
 
         return cls(question=question)
 
