@@ -64,16 +64,20 @@ class GameController(object):
     def _rename_player(self, ws, new_name):
         player = self.players[ws]
 
-        if player.name == name:
+        if player['name'] == new_name:
             asyncio.async(send(ws, {
                 'system': 'You are already known as <b>{}</b>.'.format(new_name),
             }))
         else:
-            if exists(p for p in Player if p.name == name):
-                pass  # taken!
-            else:
-                self._set_name(ws, name, old_name=player.name)
-                player.name = name
+            with db_session():
+                if exists(p for p in Player if p.name == new_name):
+                    asyncio.async(send(ws, {
+                        'system': 'This name is not available: <b>{}</b>.'.format(new_name),
+                    }))
+                else:
+                    self._set_name(ws, new_name, old_name=player['name'])
+                    Player[player['id']].set(name=new_name)
+                    player['name'] = new_name
 
     @db_session
     def login(self, ws, name, password=None):
@@ -84,6 +88,7 @@ class GameController(object):
 
         if player is None:
             player = Player(name=name)
+            commit()
         elif not player.check_password(password):
             if password is None:
                 # password required
@@ -92,8 +97,12 @@ class GameController(object):
                 # wrong password
                 return
 
-        self.players[ws] = player
+        self.players[ws] = {
+            'id': player.id,
+            'name': player.name,
+        }
         self._set_name(ws, player.name)
+        asyncio.async(send(ws, {'setinfo': trivia.get_round_info()}))
 
 
 game = GameController()
@@ -154,6 +163,9 @@ if __name__ == '__main__':
         secure.load_cert_chain(os.environ['CERT_FILE'], os.environ['CERT_KEY'])
     else:
         secure = None
+
+    db.bind('postgres', database='trivia')
+    db.generate_mapping()
 
     server = websockets.serve(handler, listen_ip, listen_port, ssl=secure)
     trivia = TriviaGame(broadcast)

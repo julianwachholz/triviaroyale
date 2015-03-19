@@ -93,7 +93,7 @@ class Player(db.Entity):
         self.password_hash = bcrypt_sha256.encrypt(password, rounds=self.BCRYPT_ROUNDS)
 
     def check_password(self, password):
-        if not self.password:
+        if not self.password_hash:
             return True
         return bcrypt_sha256.verify(password, self.password_hash)
 

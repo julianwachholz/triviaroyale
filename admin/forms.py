@@ -39,3 +39,14 @@ class QuestionForm(Form):
             'active': self.active.data,
             'categories': [Category[id] for id in self.category_list.data]
         }
+
+
+class PlayerForm(Form):
+    name = TextField('Name', [validators.Length(min=2, max=40)])
+    email = TextField('Email')
+
+    def get_data(self):
+        return {
+            'name': self.name.data,
+            'email': self.email.data,
+        }

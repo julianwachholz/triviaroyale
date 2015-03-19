@@ -9,7 +9,7 @@ from flask import Flask, flash, request, redirect, url_for, render_template
 
 from trivia.models import *
 
-from forms import CategoryForm, QuestionForm
+from forms import CategoryForm, QuestionForm, PlayerForm
 
 
 logging.basicConfig(level=logging.INFO)
@@ -115,6 +115,14 @@ make_admin(
     form_class=QuestionForm,
     query=lambda: select(q for q in Question),
     get_form_kwargs=get_question_form_kwargs
+)
+
+
+make_admin(
+    name='player',
+    model=Player,
+    form_class=PlayerForm,
+    query=lambda: select(p for p in Player),
 )
 
 

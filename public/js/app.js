@@ -54,6 +54,9 @@ ws.addEventListener('message', function (message) {
                 chatinput.disabled = false;
                 chatinput.focus();
             }
+            if (key === 'timer') {
+                animateTimer();
+            }
         }
     }
 });
@@ -151,6 +154,17 @@ function escapeHTML(text) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
+}
+
+function animateTimer(timer) {
+    var bar = document.querySelector('.timer-bar'), seconds;
+    if (bar) {
+        seconds = parseFloat(bar.getAttribute('data-time-left'));
+        bar.style.transition = 'width ' + (seconds - 0.1) + 's linear';
+        setTimeout(function () {
+            bar.style.width = '0%';
+        }, 100);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {

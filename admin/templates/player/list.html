@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="row">
+    <div class="large-12 columns">
+
+      <h1>Players</h1>
+
+      <a href="{{ url_for('player_form') }}" class="button tiny primary">
+        New Player
+      </a>
+
+      <table width="100%">
+        <thead>
+          <tr>
+            <th scope="column">Player Name</th>
+            <th scope="column" width="300">Email</th>
+            <th scope="column" width="150">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for player in player_list %}
+          <tr>
+            <td>{{ player.name }}</td>
+            <td>{{ player.email }}</td>
+            <td>
+              <a href="{{ url_for('player_form', id=player.id) }}">
+                Modify
+              </a>
+              <a href="{{ url_for('player_delete', id=player.id) }}">
+                Delete
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">
+              {{ player_count }} Players
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      {% include '_pagination.html' %}
+    </div>
+  </div>
+{% endblock %}
