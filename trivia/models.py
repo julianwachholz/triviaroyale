@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pony.orm import *
 from passlib.hash import bcrypt_sha256
@@ -134,7 +134,7 @@ class Round(db.Entity):
                 q for q in Question if q.active and (q.last_played is None or q.last_played < round_start)
             ).random(1)[0]
         except IndexError:
-            half_hour_ago = datetime.now() - datetime.timedelta(minutes=30)
+            half_hour_ago = datetime.now() - timedelta(minutes=30)
             question = select(
                 q for q in Question if q.active and q.last_played < half_hour_ago
             ).random(1)[0]
