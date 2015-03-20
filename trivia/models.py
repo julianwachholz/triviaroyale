@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import math
 from datetime import datetime, timedelta
 
 from pony.orm import *
@@ -33,6 +34,9 @@ class Question(db.Entity):
         ORDER BY RANDOM() * (times_solved / (SELECT SUM(times_solved) FROM question)::float)
         LIMIT 100
     """
+    BASE_POINTS = 500
+    MIN_PLAYED_ROUNDS = 3
+    STREAK_MODIFIER = 1.06
 
     active = Required(bool, default=False)
 
@@ -81,6 +85,22 @@ class Question(db.Entity):
 
     def check_answer(self, answer):
         return self.answer_re.search(answer) is not None
+
+    def calculate_points(self, time_percentage, hints=0, streak=1):
+        """
+        Calculate how many points answering this question got someone.
+
+        Here be dragons and crude math, mostly bad math though.
+
+        """
+        if self.times_played < self.MIN_PLAYED_ROUNDS:
+            difficulty_factor = 1
+        else:
+            difficulty_factor = 0.5
+            difficulty_factor += 1 / math.log10(max(self.solve_percentage, 1.1))  # prevent division by zero
+        base_points = self.BASE_POINTS * difficulty_factor
+        base_points *= self.STREAK_MODIFIER ** (streak - 1)
+        return int((base_points * (1 - time_percentage)) / (hints + 1))
 
 
 class Player(db.Entity):
@@ -141,10 +161,12 @@ class Round(db.Entity):
         return cls(question=question)
 
     @db_session
-    def solved_by(self, player):
+    def solved_by(self, player, total_time, hints=0, streak=1):
         self.solved = True
         self.solver = player
         self.time_taken = datetime.now().timestamp() - self.start_time.timestamp()
+        self.points = self.question.calculate_points(
+            self.time_taken / total_time, hints, streak)
 
     @db_session
     def end_round(self):

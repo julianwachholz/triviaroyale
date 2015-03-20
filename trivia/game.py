@@ -21,8 +21,9 @@ class TriviaGame(object):
 
     ROUND_TIME = 45.0
     WAIT_TIME = 15.0
-    BASE_POINTS = 500
     INACTIVITY_TIMEOUT = ROUND_TIME * 4
+
+    STREAK_ANNOUNCE = 5
 
     RE_START = re.compile('^!start', re.IGNORECASE)
 
@@ -34,6 +35,10 @@ class TriviaGame(object):
         self.timeout = None
         self.timer_start = None
         self.round = None
+        self.streak = {
+            'count': 0,
+            'player': None
+        }
 
     def get_round_info(self):
         elapsed_time = (time.time() - self.timer_start) if self.round else 0
@@ -105,10 +110,22 @@ class TriviaGame(object):
     @asyncio.coroutine
     def round_solved(self, player_name):
         self.state = self.STATE_WAITING
+        if self.streak['player'] == player_name:
+            self.streak['count'] += 1
+            if self.streak['count'] % self.STREAK_ANNOUNCE == 0:
+                self.announce_streak(player_name)
+        else:
+            if self.streak['count'] > self.STREAK_ANNOUNCE:
+                self.announce_streak(player_name, broken=True)
+            self.streak = {
+                'player': player_name,
+                'count': 1,
+            }
+
         with db_session():
             player = get(p for p in Player if p.name == player_name)
             played_round = Round[self.round.id]
-            played_round.solved_by(player)
+            played_round.solved_by(player, self.ROUND_TIME, streak=self.streak['count'])
             played_round.end_round()
             self.round = played_round
         asyncio.async(self.round_end())
@@ -139,7 +156,11 @@ class TriviaGame(object):
     @asyncio.coroutine
     def start_new_round(self):
         with db_session():
-            new_round = Round.new(self.round_start)
+            try:
+                new_round = Round.new(self.round_start)
+            except IndexError:
+                self.round_start = datetime.now()
+                new_round = Round.new(self.round_start)
             commit()
             self.round = new_round
         self.timeout = asyncio.async(self.round_timeout())
@@ -167,3 +188,14 @@ class TriviaGame(object):
         asyncio.async(self.broadcast({
             'setinfo': self.get_round_info(),
         }))
+
+    def announce_streak(self, player_name, broken=False):
+        streak = self.streak['count']
+        if broken:
+            asyncio.async(self.broadcast({
+                'system': "{} broke {}'s streak of <b>{}</b>!".format(player_name, self.streak['player'], streak),
+            }))
+        else:
+            asyncio.async(self.broadcast({
+                'system': "{} has reached a streak of <b>{}</b>!".format(player_name, streak),
+            }))
