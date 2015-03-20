@@ -27,6 +27,13 @@ class Question(db.Entity):
     Multiple answers are separated using "|"
 
     """
+    GET_RANDOM_SQL = """
+        SELECT * FROM question
+        WHERE active = true AND last_played < $round_start
+        ORDER BY RANDOM() * (times_solved / (SELECT SUM(times_solved) FROM question)::float)
+        LIMIT 100
+    """
+
     active = Required(bool, default=False)
 
     question = Required(str, 200)
@@ -130,14 +137,7 @@ class Round(db.Entity):
         Select a question and start a new round.
 
         """
-        try:
-            question = select(
-                q for q in Question if q.active and (q.last_played is None or q.last_played < round_start)
-            ).random(1)[0]
-        except IndexError:
-            question = select(
-                q for q in Question if q.active
-            ).order_by(Question.times_played).random(1)[0]
+        question = Question.select_by_sql(Question.GET_RANDOM_SQL)[0]
         return cls(question=question)
 
     @db_session
