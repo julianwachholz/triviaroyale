@@ -40,8 +40,8 @@ class Question(db.Entity):
     times_solved = Required(int, default=0)
 
     date_added = Required(datetime, sql_default='CURRENT_TIMESTAMP')
-    date_modified = Optional(datetime)
-    last_played = Optional(datetime)
+    date_modified = Required(datetime, sql_default='CURRENT_TIMESTAMP')
+    last_played = Required(datetime, sql_default='CURRENT_TIMESTAMP')
 
     rounds = Set('Round')
     reports = Set('Report')
@@ -54,7 +54,8 @@ class Question(db.Entity):
     @property
     def answer_re(self):
         if not hasattr(self, '_answer_re'):
-            pattern = r'\b{}\b'.format(self.answer)
+            answers = map(lambda a: re.escape(a), self.answer.split('|'))
+            pattern = r'\b{}\b'.format('|'.join(answers))
             self._answer_re = re.compile(pattern, re.IGNORECASE)
         return self._answer_re
 
@@ -87,14 +88,14 @@ class Player(db.Entity):
     email = Optional(str, 200)
 
     date_joined = Required(datetime, sql_default='CURRENT_TIMESTAMP')
-    last_played = Optional(datetime)
+    last_played = Required(datetime, sql_default='CURRENT_TIMESTAMP')
 
     rounds_solved = Set('Round')
     submitted_reports = Set('Report')
     submitted_questions = Set(Question)
 
-    def before_update(self):
-        self.date_modified = datetime.now()
+    def logged_in(self):
+        self.last_played = datetime.now()
 
     def has_password(self):
         return bool(self.password_hash)

@@ -115,6 +115,8 @@ class GameController(object):
                 }))
                 return
 
+        player.logged_in()
+
         self.players[ws] = {
             'id': player.id,
             'name': player.name,
