@@ -1,7 +1,6 @@
 flask
 websockets
 flask-wtf
-#redis==2.10.3
 pony
 psycopg2
 passlib

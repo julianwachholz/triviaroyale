@@ -8,6 +8,8 @@ var WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' 
     pingTimeout;
 
 ws.addEventListener('open', function (event) {
+    var playername, password;
+
     state.innerHTML = '<p>Connected! :)</p>';
 
     setTimeout(function () {
@@ -15,9 +17,18 @@ ws.addEventListener('open', function (event) {
         ws.send(JSON.stringify({ping: performance.now()}));
     }, 500);
 
-    var name = localStorage.getItem('playername');
-    if (name) {
-        ws.send(JSON.stringify({login: name}));
+    playername = localStorage.getItem('playername');
+    if (playername) {
+        password = localStorage.getItem('password');
+        if (password) {
+            ws.send(JSON.stringify({
+                login: playername,
+                password: password,
+                auto: true
+            }))
+        } else {
+            ws.send(JSON.stringify({login: playername}));
+        }
     } else {
         window.modal('login');
     }
@@ -113,6 +124,7 @@ window.modal = function (which, data) {
     }
     if (which === 'password') {
         modalPrompt('Enter password for ' + data.login + ':', function (password) {
+            localStorage.setItem('password', password);
             data.password = password;
             ws.send(JSON.stringify(data));
         });

@@ -89,7 +89,7 @@ class GameController(object):
         }))
 
     @db_session
-    def login(self, ws, name, password=None):
+    def login(self, ws, name, password=None, auto=False):
         if ws in self.players.keys():
             if password is not None:
                 return self._set_password(ws, password)
@@ -101,7 +101,7 @@ class GameController(object):
             player = Player(name=name)
             commit()
         elif not player.check_password(password):
-            if password is None:
+            if password is None or auto:
                 asyncio.async(send(ws, {
                     'prompt': 'password',
                     'data': {'login': name},
@@ -149,7 +149,7 @@ def game_handle(ws, data):
         asyncio.async(send(ws, {'pong': data.get('ping')}))
 
     if 'login' in keys:
-        game.login(ws, data.get('login'), data.get('password', None))
+        game.login(ws, data.get('login'), data.get('password', None), data.get('auto', False))
 
     if 'text' in keys:
         game.chat(ws, data.get('text'))
