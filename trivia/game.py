@@ -22,7 +22,7 @@ class TriviaGame(object):
     ROUND_TIME = 45.0
     WAIT_TIME = 15.0
     BASE_POINTS = 500
-    INACTIVITY_TIMEOUT = ROUND_TIME * 5
+    INACTIVITY_TIMEOUT = ROUND_TIME * 4
 
     RE_START = re.compile('^!start', re.IGNORECASE)
 
@@ -70,7 +70,7 @@ class TriviaGame(object):
             )
 
         elif self.state == self.STATE_IDLE:
-            game = '<p>Trivia is not running.</p><p>Say <kbd>!start</kbd> to being a new round.</p>'
+            game = '<p>Trivia is not running.</p><p>Say <kbd>!start</kbd> to begin a new round.</p>'
 
         return {
             'game': game,
