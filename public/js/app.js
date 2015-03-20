@@ -123,6 +123,10 @@ window.modal = function (which, data) {
         });
     }
     if (which === 'password') {
+        if (!data || !data.login) {
+            console.warn('modal password without login called');
+            return;
+        }
         modalPrompt('Enter password for ' + data.login + ':', function (password) {
             localStorage.setItem('password', password);
             data.password = password;
@@ -211,6 +215,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 ws.send(JSON.stringify({login: name}));
             }
         }, true);
+    });
+    changepassword.addEventListener('click', function (event) {
+        var playername;
+        event.preventDefault();
+        playername = localStorage.getItem('playername');
+        if (playername) {
+            window.modal('password', {login: playername});
+        }
     });
 });
 
