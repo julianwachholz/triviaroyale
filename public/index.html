@@ -15,7 +15,7 @@
     </div>
     <div class="header-item header-info">
       <span id="ping">--.--ms</span>
-      <a id="playername" href="# change your name!">Login</a>
+      <a id="playername" href="#">Login</a>
     </div>
   </header>
   <div class="page">
@@ -28,6 +28,24 @@
         <button type="submit">Chat!</button>
       </form>
     </main>
+    <aside>
+    <!--
+      <div class="sidebar">
+        <h3>Statistics</h3>
+      </div>
+    -->
+      <div class="sidebar playerlist">
+        <h3>Online players (<span id="playercount">0</span>)</h3>
+        <ul class="unstyled" id="playerlist">
+        </ul>
+      </div>
+      <footer class="sidebar">
+        <div>
+          <h3>Functions</h3>
+          <a href="#" id="changepassword">change/set password</a>
+        </div>
+      </footer>
+    </aside>
   </div>
   <div id="state" class="hidden"></div>
   <script src="/reconnecting-websocket.min.js"></script>

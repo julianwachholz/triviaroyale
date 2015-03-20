@@ -42,10 +42,12 @@ class GameController(object):
         """
         if ws in self.clients:
             if ws in self.players:
-                asyncio.async(broadcast({
-                    'system': "{} left.".format(self.players[ws]['name']),
-                }))
+                name = self.players[ws]['name']
                 del self.players[ws]
+                asyncio.async(broadcast({
+                    'system': "{} left.".format(name),
+                    'setinfo': self._get_player_info(),
+                }))
             self.clients.remove(ws)
 
     def _set_name(self, ws, name, old_name=None):
@@ -55,10 +57,12 @@ class GameController(object):
         if old_name is None:
             asyncio.async(broadcast({
                 'system': "{} joined.".format(name),
+                'setinfo': self._get_player_info(),
             }))
         else:
             asyncio.async(broadcast({
                 'system': "{} is now known as <b>{}</b>.".format(old_name, name),
+                'setinfo': self._get_player_info(),
             }))
 
     def _rename_player(self, ws, new_name):
@@ -78,6 +82,13 @@ class GameController(object):
                     self._set_name(ws, new_name, old_name=player['name'])
                     Player[player['id']].set(name=new_name)
                     player['name'] = new_name
+
+    def _get_player_info(self):
+        names = map(lambda player: player['name'], self.players.values())
+        return {
+            'playercount': len(self.players),
+            'playerlist': '<li>{}</li>'.format('</li><li>'.join(names))
+        }
 
     @db_session
     def _set_password(self, ws, password):
