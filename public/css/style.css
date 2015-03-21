@@ -99,7 +99,6 @@ ul.unstyled {
 .page {
   flex: 1;
   display: flex;
-  align-items: stretch;
 }
 main {
   flex: 5;
@@ -175,6 +174,7 @@ footer div {
 
 .chat {
   flex: 1;
+  max-height: 44vh;
   overflow-y: scroll;
   padding: 1em;
 }
