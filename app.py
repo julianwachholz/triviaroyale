@@ -208,7 +208,7 @@ if __name__ == '__main__':
         secure = None
 
     db.bind('postgres', database='trivia')
-    db.generate_mapping()
+    db.generate_mapping(create_tables=True)
 
     server = websockets.serve(handler, listen_ip, listen_port, ssl=secure)
     trivia = TriviaGame(broadcast)
