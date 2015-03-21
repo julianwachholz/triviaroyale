@@ -29,10 +29,10 @@ class TriviaGame(object):
     HINT_MAX = 3
 
     RE_START = re.compile(r'^!start', re.I)
-    RE_HINT = re.compile(r'^!hint', re.I)
-    RE_NEXT = re.compile(r'^!next', re.I)
+    RE_HINT = re.compile(r'^!h(int)?', re.I)
+    RE_NEXT = re.compile(r'^!n(ext)?', re.I)
 
-    RE_ADMIN = re.compile(r'^!admin (\S+) ?(.*?)$', re.I)
+    RE_ADMIN = re.compile(r'^!a(?:dmin)? (\S+) ?(.*?)$', re.I)
 
     def __init__(self, broadcast):
         self.state = self.STATE_IDLE
