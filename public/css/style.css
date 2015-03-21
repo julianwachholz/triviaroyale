@@ -149,6 +149,16 @@ footer div {
 }
 .question-categories {
 }
+.question-hint {
+  font-size: 1.1em;
+}
+.question-hint kbd {
+  letter-spacing: .15em;
+  background: rgba(0,0,0,.1);
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: .3em;
+  padding: .3em;
+}
 
 .timer {
   font: normal 500 16px/1.5 "Roboto", sans-serif;

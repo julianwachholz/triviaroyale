@@ -25,6 +25,8 @@ class TriviaGame(object):
     INACTIVITY_TIMEOUT = ROUND_TIME * 4
 
     STREAK_STEPS = 5
+    HINT_TIMEOUT = 10.0
+    HINT_MAX = 3
 
     RE_START = re.compile(r'^!start', re.I)
     RE_HINT = re.compile(r'^!hint', re.I)
@@ -41,6 +43,7 @@ class TriviaGame(object):
         self.timer_start = None
         self.round = None
         self.player_count = 0
+        self._reset_hints()
         self._reset_streak()
 
     def get_round_info(self):
@@ -52,8 +55,11 @@ class TriviaGame(object):
                     '<p class="question-categories">{round.question.category_names}</p>'
                     '<p class="question">{round.question.question}</p>').format(round=self.round)
 
+            if self.hints['current'] is not None:
+                game += '<p class="question-hint">Hint: {}</p>'.format(self.hints['current'])
+
             timer = ('<div class="timer-bar" style="width:{width}%" data-time-left="{time_left}"></div>'
-                     '<div class="timer-value"><span>{time_left}</span>s</div>').format(
+                     '<div class="timer-value"><span>{time_left:.2f}</span>s</div>').format(
                 width=(self.ROUND_TIME - elapsed_time) / self.ROUND_TIME * 100.0,
                 time_left=self.ROUND_TIME - elapsed_time,
             )
@@ -116,6 +122,8 @@ class TriviaGame(object):
                 if self.round.question.check_answer(text):
                     asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
                     asyncio.async(self.round_solved(player))
+                elif self.RE_HINT.search(text):
+                    self.get_hint()
 
             if self.state == self.STATE_WAITING:
                 if self.RE_NEXT.search(text) and self.has_streak(player):
@@ -145,7 +153,12 @@ class TriviaGame(object):
         with db_session():
             player_db = get(p for p in Player if p.name == player['name'])
             played_round = Round[self.round.id]
-            played_round.solved_by(player_db, self.ROUND_TIME, streak=self.streak['count'])
+            played_round.solved_by(
+                player_db,
+                self.ROUND_TIME,
+                hints=self.hints['count'],
+                streak=self.streak['count']
+            )
             played_round.end_round()
             self.round = played_round
         asyncio.async(self.round_end())
@@ -209,6 +222,7 @@ class TriviaGame(object):
         self.timeout = asyncio.async(self.round_timeout())
         self.state = self.STATE_QUESTION
         self.timer_start = time.time()
+        self._reset_hints()
         self.broadcast_info()
 
     @asyncio.coroutine
@@ -240,7 +254,7 @@ class TriviaGame(object):
         }
 
     def has_streak(self, player):
-        return self.streak['player_id'] == player['id'] and self.streak['count'] > self.STREAK_STEPS
+        return self.streak['player_id'] == player['id'] and self.streak['count'] >= self.STREAK_STEPS
 
     def announce_streak(self, player_name, broken=False):
         streak = self.streak['count']
@@ -254,6 +268,31 @@ class TriviaGame(object):
                 info += " You can skip to the next round with <kbd>!next</kbd>."
             asyncio.async(self.broadcast({
                 'system': info,
+            }))
+
+    def _reset_hints(self):
+        self.hints = {
+            'count': 0,
+            'current': None,
+            'time': 0,
+            'cooldown': 0,
+        }
+
+    def get_hint(self):
+        if self.hints['count'] >= self.HINT_MAX:
+            return
+
+        now = time.time()
+        hint_cooldown = now - self.hints['time']
+        if hint_cooldown > self.HINT_TIMEOUT:
+            self.hints['time'] = now
+            self.hints['count'] += 1
+            self.hints['current'] = self.round.question.get_hint(self.hints['count'])
+            self.broadcast_info()
+        elif now - self.hints['cooldown'] > self.HINT_TIMEOUT:
+            self.hints['cooldown'] = now
+            asyncio.async(self.broadcast({
+                'system': "Please wait {:.2f}s for a new hint.".format(self.HINT_TIMEOUT - hint_cooldown),
             }))
 
 

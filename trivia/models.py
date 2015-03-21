@@ -38,6 +38,9 @@ class Question(db.Entity):
     MIN_PLAYED_ROUNDS = 3
     STREAK_MODIFIER = 1.05
 
+    MASK_CHAR = '_'
+    COMMON_WORDS = ['the', 'a', 'an', 'and']
+
     active = Required(bool, default=False)
 
     question = Required(str, 200)
@@ -86,6 +89,58 @@ class Question(db.Entity):
     def check_answer(self, answer):
         return self.answer_re.search(answer) is not None
 
+    def _mask_word(self, word, vowels_fn=None, consonants_fn=None):
+        if word in self.COMMON_WORDS:
+            return word
+
+        word_len = len(word)
+        masked_word = list(self.MASK_CHAR * word_len)
+
+        vowels = vowels_fn(word_len)
+        consonants = consonants_fn(word_len)
+
+        if vowels:
+            r = re.compile(r'(?:\b|[^aeiou])([aeiou])', re.I)
+            for i, match in enumerate(r.finditer(word)):
+                masked_word[match.end() - 1] = match.group(1)
+                if i + 1 >= vowels:
+                    break
+            else:
+                # no vowels!
+                consonants += 1
+
+        if consonants:
+            r = re.compile(r'([^aeiou])', re.I)
+            for i, match in enumerate(r.finditer(word)):
+                masked_word[match.end() - 1] = match.group(1)
+                if i + 1 >= consonants or word_len < 4:
+                    break
+        return ''.join(masked_word)
+
+    def get_hint(self, num):
+        """
+        Give some hints about the answer.
+
+        """
+        answer = self.primary_answer
+
+        if num == 1 and not re.search(r'[^A-Za-z]', answer):
+            return "{} letters".format(len(answer))
+
+        words = re.compile(r'\w{2,}').findall(answer)
+
+        def _letters(hint_num, consonants=False):
+            base = hint_num - (1 if consonants else 0)
+            return lambda l: max(0, base if l > 6 else (base - 1))
+
+        vowels = _letters(num)
+        consonants = _letters(num, True)
+
+        hint = answer
+        for word in words:
+            hint = hint.replace(word, self._mask_word(word, vowels, consonants))
+        return "<kbd>{}</kbd>".format(hint)
+
     def calculate_points(self, time_percentage, hints=0, streak=1):
         """
         Calculate how many points answering this question got someone.
@@ -100,6 +155,8 @@ class Question(db.Entity):
             difficulty_factor += 1 / math.log10(max(self.solve_percentage, 1.1))  # prevent division by zero
         base_points = self.BASE_POINTS * difficulty_factor
         base_points *= self.STREAK_MODIFIER ** (streak - 1)
+        if hints == 1:
+            hints = 0.1  # first hint won't substract too much points
         return int((base_points * (1 - time_percentage)) / (hints + 1))
 
 
