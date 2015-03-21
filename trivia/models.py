@@ -34,6 +34,7 @@ class Question(db.Entity):
         ORDER BY RANDOM() * (GREATEST(times_solved, 1) / (SELECT SUM(times_solved)+1 FROM question)::float)
         LIMIT 100
     """
+    MIN_POINTS = 100
     BASE_POINTS = 500
     MIN_PLAYED_ROUNDS = 3
     STREAK_MODIFIER = 1.05
@@ -156,8 +157,8 @@ class Question(db.Entity):
         base_points = self.BASE_POINTS * difficulty_factor
         base_points *= self.STREAK_MODIFIER ** (streak - 1)
         if hints == 1:
-            hints = 0.1  # first hint won't substract too much points
-        return int((base_points * (1 - time_percentage)) / (hints + 1))
+            hints = 0.2  # first hint won't substract too much points
+        return int(max(self.MIN_POINTS, base_points * (1 - time_percentage)) / (1 + hints * 0.5))
 
 
 class Player(db.Entity):
