@@ -109,10 +109,18 @@ class Player(db.Entity):
 
     """
     BCRYPT_ROUNDS = 11
+    PERMISSIONS = [
+        '__EVERYTHING__',
+        'stop',
+        'start',
+        'unlock',
+        'next',
+    ]
 
     name = Required(str, 40, unique=True)
     password_hash = Optional(str, 200)
     email = Optional(str, 200)
+    permissions = Required(int, default=0)
 
     date_joined = Required(datetime, sql_default='CURRENT_TIMESTAMP')
     last_played = Required(datetime, sql_default='CURRENT_TIMESTAMP')
@@ -136,6 +144,27 @@ class Player(db.Entity):
         if password is None:
             return False
         return bcrypt_sha256.verify(password, self.password_hash)
+
+    def add_perm(self, command):
+        try:
+            perm = 1 << self.PERMISSIONS.index(command)
+        except ValueError:
+            return
+        self.permissions |= perm
+
+    def remove_perm(self, command):
+        try:
+            perm = 1 << self.PERMISSIONS.index(command)
+        except ValueError:
+            return
+        self.permissions ^= perm
+
+    def has_perm(self, command):
+        try:
+            perm = 1 << self.PERMISSIONS.index(command)
+        except ValueError:
+            return False
+        return 1 & self.permissions or perm & self.permissions
 
 
 class Round(db.Entity):

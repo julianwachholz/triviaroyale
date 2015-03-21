@@ -18,14 +18,19 @@ class TriviaGame(object):
     STATE_IDLE = 'idle'
     STATE_QUESTION = 'question'
     STATE_WAITING = 'waiting'
+    STATE_LOCKED = 'locked'
 
     ROUND_TIME = 45.0
     WAIT_TIME = 15.0
     INACTIVITY_TIMEOUT = ROUND_TIME * 4
 
-    STREAK_ANNOUNCE = 5
+    STREAK_STEPS = 5
 
-    RE_START = re.compile('^!start', re.IGNORECASE)
+    RE_START = re.compile(r'^!start', re.I)
+    RE_HINT = re.compile(r'^!hint', re.I)
+    RE_NEXT = re.compile(r'^!next', re.I)
+
+    RE_ADMIN = re.compile(r'^!admin (\S+) ?(.*?)$', re.I)
 
     def __init__(self, broadcast):
         self.state = self.STATE_IDLE
@@ -35,10 +40,8 @@ class TriviaGame(object):
         self.timeout = None
         self.timer_start = None
         self.round = None
-        self.streak = {
-            'count': 0,
-            'player': None
-        }
+        self.player_count = 0
+        self._reset_streak()
 
     def get_round_info(self):
         elapsed_time = (time.time() - self.timer_start) if self.round else 0
@@ -77,6 +80,9 @@ class TriviaGame(object):
         elif self.state == self.STATE_IDLE:
             game = '<p>Trivia is not running.</p><p>Say <kbd>!start</kbd> to begin a new round.</p>'
 
+        elif self.state == self.STATE_LOCKED:
+            game = '<p>Trivia is stopped.</p><p>Only an administrator can start it.</p>'
+
         return {
             'game': game,
             'timer': timer,
@@ -100,35 +106,75 @@ class TriviaGame(object):
             player, text = yield from self.queue.get()
             self.last_action = time.time()
 
-            if self.state == self.STATE_IDLE and self.RE_START.match(text):
-                asyncio.async(self.delay_new_round(new_round=True))
+            if self.RE_ADMIN.search(text) and player['permissions'] > 0:
+                match = self.RE_ADMIN.match(text)
+                admin = AdminCommand(self, player['id'])
+                admin.run(match.group(1), *match.group(2).split())
+                continue
 
-            if self.state == self.STATE_QUESTION and self.round.question.check_answer(text):
-                asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
-                asyncio.async(self.round_solved(player))
+            if self.state == self.STATE_QUESTION:
+                if self.round.question.check_answer(text):
+                    asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
+                    asyncio.async(self.round_solved(player))
+
+            if self.state == self.STATE_WAITING:
+                if self.RE_NEXT.search(text) and self.has_streak(player):
+                    self.next_round()
+
+            if self.state == self.STATE_IDLE:
+                if self.RE_START.search(text):
+                    self.timeout = asyncio.async(self.delay_new_round(new_round=True))
 
     @asyncio.coroutine
-    def round_solved(self, player_name):
+    def round_solved(self, player):
         self.state = self.STATE_WAITING
-        if self.streak['player'] == player_name:
+        if self.streak['player_id'] == player['id']:
             self.streak['count'] += 1
-            if self.streak['count'] % self.STREAK_ANNOUNCE == 0:
-                self.announce_streak(player_name)
+            self.streak['player_name'] = player['name']
+            if self.streak['count'] % self.STREAK_STEPS == 0:
+                self.announce_streak(player['name'])
         else:
-            if self.streak['count'] > self.STREAK_ANNOUNCE:
-                self.announce_streak(player_name, broken=True)
+            if self.streak['count'] > self.STREAK_STEPS:
+                self.announce_streak(player['name'], broken=True)
             self.streak = {
-                'player': player_name,
+                'player_id': player['id'],
+                'player_name': player['name'],
                 'count': 1,
             }
 
         with db_session():
-            player = get(p for p in Player if p.name == player_name)
+            player_db = get(p for p in Player if p.name == player['name'])
             played_round = Round[self.round.id]
-            played_round.solved_by(player, self.ROUND_TIME, streak=self.streak['count'])
+            played_round.solved_by(player_db, self.ROUND_TIME, streak=self.streak['count'])
             played_round.end_round()
             self.round = played_round
         asyncio.async(self.round_end())
+
+    def next_round(self):
+        """
+        Skip to the next round.
+
+        """
+        if self.state == self.STATE_WAITING and self.timeout is not None:
+            asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
+            asyncio.async(self.start_new_round())
+
+    def stop_game(self, reason=None, lock=False):
+        """
+        Stop the game immediately no matter what.
+
+        """
+        if self.timeout is not None:
+            asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
+        if lock:
+            self.state = self.STATE_LOCKED
+        else:
+            self.state = self.STATE_IDLE
+
+        asyncio.async(self.broadcast({
+            'system': reason or "Stopping due to inactivity!",
+        }))
+        self.broadcast_info()
 
     @asyncio.coroutine
     def delay_new_round(self, new_round=False):
@@ -138,18 +184,15 @@ class TriviaGame(object):
         if new_round:
             wait = self.WAIT_TIME / 3
             self.round_start = datetime.now()
+            self._reset_streak()
             asyncio.async(self.broadcast({
                 'system': "New round starting in {}s!".format(wait),
             }))
 
         yield from asyncio.sleep(wait)
 
-        if time.time() - self.last_action > self.INACTIVITY_TIMEOUT:
-            self.state = self.STATE_IDLE
-            asyncio.async(self.broadcast({
-                'system': "Stopping due to inactivity!",
-            }))
-            self.broadcast_info()
+        if self.player_count < 1 or time.time() - self.last_action > self.INACTIVITY_TIMEOUT:
+            self.stop_game()
         else:
             asyncio.async(self.start_new_round())
 
@@ -182,20 +225,69 @@ class TriviaGame(object):
         self.state = self.STATE_WAITING
         self.timer_start = time.time()
         self.broadcast_info()
-        asyncio.async(self.delay_new_round())
+        self.timeout = asyncio.async(self.delay_new_round())
 
     def broadcast_info(self):
         asyncio.async(self.broadcast({
             'setinfo': self.get_round_info(),
         }))
 
+    def _reset_streak(self):
+        self.streak = {
+            'count': 0,
+            'player_name': None,
+            'player_id': None,
+        }
+
+    def has_streak(self, player):
+        return self.streak['player_id'] == player['id'] and self.streak['count'] > self.STREAK_STEPS
+
     def announce_streak(self, player_name, broken=False):
         streak = self.streak['count']
         if broken:
             asyncio.async(self.broadcast({
-                'system': "{} broke {}'s streak of <b>{}</b>!".format(player_name, self.streak['player'], streak),
+                'system': "{} broke {}'s streak of <b>{}</b>!".format(player_name, self.streak['player_name'], streak),
             }))
         else:
+            info = "{} has reached a streak of <b>{}</b>!".format(player_name, streak)
+            if streak == self.STREAK_STEPS:
+                info += " You can skip to the next round with <kbd>!next</kbd>."
             asyncio.async(self.broadcast({
-                'system': "{} has reached a streak of <b>{}</b>!".format(player_name, streak),
+                'system': info,
             }))
+
+
+class AdminCommand(object):
+    """
+    Run an administrative command.
+
+    """
+    def __init__(self, game, player_id):
+        self.game = game
+        self.player_id = player_id
+
+    def run(self, cmd, *args):
+        if hasattr(self, cmd):
+            with db_session():
+                player = Player[self.player_id]
+                if player.has_perm(cmd):
+                    logger.info("{} executed: {}({!r})".format(player.name, cmd, args))
+                    return getattr(self, cmd)(self, *args)
+                else:
+                    logger.warn("{} has no access to: {}".format(player, cmd))
+        else:
+            logger.info("Player #{} triggered unknown command: {}".format(self.player_id, cmd))
+
+    def next(self, *args):
+        self.game.next_round()
+
+    def stop(self, *args):
+        self.game.stop_game("Stopped by administrator.", lock='lock' in args)
+
+    def unlock(self, *args):
+        self.game.state = TriviaGame.STATE_IDLE
+        self.game.broadcast_info()
+
+    def start(self, *args):
+        """If game is locked, only this will start it again."""
+        self.game.timeout = asyncio.async(self.game.delay_new_round(new_round=True))

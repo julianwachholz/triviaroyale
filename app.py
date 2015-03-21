@@ -11,11 +11,6 @@ from trivia.game import TriviaGame
 from trivia.models import *
 
 
-logger = logging.getLogger('websockets.server')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler())
-
-
 class GameController(object):
     """
     Game controller handling users and game interaction.
@@ -44,6 +39,7 @@ class GameController(object):
             if ws in self.players:
                 name = self.players[ws]['name']
                 del self.players[ws]
+                trivia.player_count -= 1
                 asyncio.async(broadcast({
                     'system': "{} left.".format(name),
                     'setinfo': self._get_player_info(),
@@ -55,6 +51,7 @@ class GameController(object):
             'playername': name,
         }}))
         if old_name is None:
+            trivia.player_count += 1
             asyncio.async(broadcast({
                 'system': "{} joined.".format(name),
                 'setinfo': self._get_player_info(),
@@ -131,6 +128,7 @@ class GameController(object):
         self.players[ws] = {
             'id': player.id,
             'name': player.name,
+            'permissions': player.permissions,
         }
         self._set_name(ws, player.name)
 
@@ -143,12 +141,12 @@ class GameController(object):
         asyncio.async(send(ws, {'setinfo': trivia.get_round_info()}))
 
     def chat(self, ws, text):
-        player_name = self.players[ws]['name']
+        player = self.players[ws]
         asyncio.async(broadcast({
-            'player': player_name,
+            'player': player['name'],
             'text': text,
         }))
-        asyncio.async(trivia.chat(player_name, text))
+        asyncio.async(trivia.chat(player, text))
 
 
 game = GameController()
@@ -212,6 +210,10 @@ if __name__ == '__main__':
 
     server = websockets.serve(handler, listen_ip, listen_port, ssl=secure)
     trivia = TriviaGame(broadcast)
+
+    logger = logging.getLogger('trivia.game')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(logging.StreamHandler())
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(server)
