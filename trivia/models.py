@@ -31,7 +31,7 @@ class Question(db.Entity):
     GET_RANDOM_SQL = """
         SELECT * FROM question
         WHERE active = true AND last_played < $round_start
-        ORDER BY RANDOM() * (times_solved / (SELECT SUM(times_solved) FROM question)::float)
+        ORDER BY RANDOM() * (times_solved / (SELECT SUM(times_solved)+1 FROM question)::float)
         LIMIT 100
     """
     BASE_POINTS = 500
