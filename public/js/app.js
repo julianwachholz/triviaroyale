@@ -206,8 +206,51 @@ function animateTimer(timer) {
     }
 }
 
+function inputHistory(max_history) {
+    var PREV = 38, NEXT = 40, ENTER = 13,
+        history = [''], current = 0;
+
+    if (!max_history) {
+        max_history = 100;
+    }
+
+    return function (event) {
+        switch (event.which) {
+            case ENTER:
+            if (this.value.trim().length) {
+                history[current] = this.value;
+                history.unshift('');
+                current = 0;
+                if (history.length > max_history) {
+                    history = history.slice(0, max_history);
+                }
+            }
+            break;
+
+            case PREV:
+            if (current + 1 < history.length) {
+                event.preventDefault();
+                history[current] = this.value;
+                current += 1;
+                this.value = history[current];
+            }
+            break;
+
+            case NEXT:
+            if (current - 1 >= 0) {
+                event.preventDefault();
+                history[current] = this.value;
+                current -= 1;
+                this.value = history[current];
+            }
+            break;
+        }
+    };
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', chatHandler);
+    chatinput.addEventListener('keydown', inputHistory());
     playername.addEventListener('click', function (event) {
         event.preventDefault();
         modalPrompt('Change your player name!', function (name) {
