@@ -17,7 +17,7 @@ class Category(db.Entity):
     Questions should have at least one category.
 
     """
-    name = Required(str, 25, unique=True)
+    name = Required(str, 40, unique=True)
     questions = Set('Question')
 
 

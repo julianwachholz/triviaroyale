@@ -34,7 +34,7 @@ def make_admin(name, model, form_class, query, get_form_kwargs=None, count_query
         page = int(request.args.get('p', 1))
         if page < 1:
             page = 1
-        pagesize = 10
+        pagesize = 100
 
         objects = query()
         object_count = count(count_query() if count_query else objects)
