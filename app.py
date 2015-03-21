@@ -76,9 +76,10 @@ class GameController(object):
                         'system': 'This name is not available: <b>{}</b>.'.format(new_name),
                     }))
                 else:
-                    self._set_name(ws, new_name, old_name=player['name'])
-                    Player[player['id']].set(name=new_name)
+                    old_name = player['name']
                     player['name'] = new_name
+                    Player[player['id']].set(name=new_name)
+                    self._set_name(ws, new_name, old_name=old_name)
 
     def _get_player_info(self):
         names = map(lambda player: player['name'], self.players.values())
