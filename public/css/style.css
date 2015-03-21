@@ -8,13 +8,12 @@ html, body {
   font: normal 400 16px/1.64 "Roboto", sans-serif;
   color: #222;
   background: #fafafa;
-  height: 100%;
-  min-height: 100%;
 }
 
 body {
   display: flex;
-  flex-direction: column;
+  flex-flow: column;
+  height: 100vh;
 }
 body.loading {
   display: none;
@@ -104,7 +103,8 @@ main {
   flex: 5;
   align-self: stretch;
   display: flex;
-  flex-direction: column;
+  flex-flow: column nowrap;
+  height: calc(100vh - 50px);
 }
 aside {
   flex: 1;
@@ -174,7 +174,6 @@ footer div {
 
 .chat {
   flex: 1;
-  max-height: 44vh;
   overflow-y: scroll;
   padding: 1em;
 }
