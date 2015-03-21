@@ -31,12 +31,12 @@ class Question(db.Entity):
     GET_RANDOM_SQL = """
         SELECT * FROM question
         WHERE active = true AND last_played < $round_start
-        ORDER BY RANDOM() * (times_solved / (SELECT SUM(times_solved)+1 FROM question)::float)
+        ORDER BY RANDOM() * (GREATEST(times_solved, 1) / (SELECT SUM(times_solved)+1 FROM question)::float)
         LIMIT 100
     """
     BASE_POINTS = 500
     MIN_PLAYED_ROUNDS = 3
-    STREAK_MODIFIER = 1.06
+    STREAK_MODIFIER = 1.05
 
     active = Required(bool, default=False)
 
