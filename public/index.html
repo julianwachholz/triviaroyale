@@ -10,43 +10,48 @@
 </head>
 <body id="body" class="loading">
   <header class="page-header">
-    <div class="header-item header-title">
-      <h1>Trivia</h1>
-    </div>
-    <div class="header-item header-info">
-      <span id="ping">--.--ms</span>
-      <a id="playername" href="#">Login</a>
-    </div>
+    <h1>Trivia</h1>
+    <a id="menu" href="#aside">
+      <svg width="100%" height="100%" viewBox="0 0 10 10">
+        <path d="M0,1 10,1" stroke="#444" stroke-width="2"/>
+        <path d="M0,5 10,5" stroke="#444" stroke-width="2"/>
+        <path d="M0,9 10,9" stroke="#444" stroke-width="2"/>
+      </svg>
+    </a>
   </header>
-  <div class="page">
-    <main>
-      <section id="game" class="question-container"></section>
-      <div id="timer" class="timer"></div>
-      <section id="chat" class="chat"></section>
-      <form id="form" class="chat-form">
-        <input id="chatinput" type="text" maxlength="250" autocomplete="off" disabled>
-        <button type="submit">Chat!</button>
-      </form>
-    </main>
-    <aside>
-    <!--
-      <div class="sidebar">
-        <h3>Statistics</h3>
+  <main>
+    <section id="game" class="question-container"></section>
+    <div id="timer" class="timer"></div>
+    <section id="chat" class="chat"></section>
+    <form id="form" class="chat-form">
+      <input id="chatinput" type="text" maxlength="250" autocomplete="off" disabled>
+      <button type="submit">Chat!</button>
+    </form>
+  </main>
+  <aside id="aside">
+    <div class="sidebar">
+      <h3>Statistics</h3>
+      <dl>
+        <dt>Ping</dt>
+        <dd id="ping">--.--ms</dd>
+        <dt>Name</dt>
+        <dd id="playername">--</dd>
+      </dl>
+    </div>
+    <div class="sidebar playerlist">
+      <h3><span id="playercount">0</span> Players</h3>
+      <ul class="unstyled" id="playerlist">
+      </ul>
+    </div>
+    <footer class="sidebar">
+      <div>
+        <h3>Functions</h3>
+        <a href="#change-name" id="changename">Login</a>
+        <a href="#change-password" id="changepassword" class="hidden">Change password</a>
       </div>
-    -->
-      <div class="sidebar playerlist">
-        <h3>Players (<span id="playercount">0</span>)</h3>
-        <ul class="unstyled" id="playerlist">
-        </ul>
-      </div>
-      <footer class="sidebar">
-        <div>
-          <h3>Functions</h3>
-          <a href="#" id="changepassword">change/set password</a>
-        </div>
-      </footer>
-    </aside>
-  </div>
+    </footer>
+  </aside>
+
   <div id="state" class="hidden"></div>
   <script src="/reconnecting-websocket.min.js"></script>
   <script src="/js/app.js?2"></script>

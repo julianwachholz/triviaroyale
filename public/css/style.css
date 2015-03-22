@@ -14,6 +14,7 @@ body {
   display: flex;
   flex-flow: column;
   height: 100vh;
+  overflow: hidden;
 }
 body.loading {
   display: none;
@@ -29,7 +30,7 @@ body.loading {
   bottom: 0;
   left: 0;
   background: rgba(128, 128, 128, 0.75);
-  font: normal 400 48px/2 "Roboto", sans-serif;
+  font: normal 400 28px/2 "Roboto", sans-serif;
 }
 #state.hidden {
   display: none;
@@ -44,30 +45,16 @@ h2, h3, h4 {
 }
 
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   height: 50px;
+  position: relative;
+  z-index: 1;
+  text-align: center;
   background: #ffffff;
   box-shadow: 0 1px 3px rgba(0,0,0,.25);
 }
-.header-item {
-}
-.header-title {
-  flex: 5;
-  text-align: center;
-}
-.header-info {
-  flex: 1;
-  display: flex;
+
+.page-header h1 {
   line-height: 50px;
-  align-items: stretch;
-  justify-content: space-around;
-}
-.header-info span, .header-info a {
-  flex: 1 0;
-  text-align: center;
-  border: none;
 }
 
 a {
@@ -95,23 +82,61 @@ ul.unstyled {
   list-style: none;
 }
 
-.page {
-  flex: 1;
-  display: flex;
+dl dt {
+  float: left;
+  width: 50%;
 }
+dl:after, dl:before {
+  display: table;
+  content: ' ';
+}
+dl:after {
+  clear: both;
+}
+.hidden {
+  display: none;
+}
+
 main {
-  flex: 5;
-  align-self: stretch;
   display: flex;
   flex-flow: column nowrap;
   height: calc(100vh - 50px);
 }
+
+#menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: none;
+  width: 50px;
+  height: 50px;
+  padding: 15px;
+  overflow: hidden;
+}
+#menu svg {
+  transition: margin-right .2s ease-out;
+}
+#menu.open svg {
+  margin-right: -40px;
+}
+
 aside {
-  flex: 1;
+  position: absolute;
+  top: 50px;
+  right: -100%;
+  transition: right .3s ease-in-out;
+  bottom: 0;
+  width: 350px;
+  max-width: 90%;
+  background: #fcfcfc;
+  box-shadow: -1px 0 3px rgba(0,0,0,.25);
   font-size: 0.95em;
   display: flex;
   flex-direction: column;
   border-left: 1px solid rgba(0,0,0,0.1);
+}
+aside.open {
+  right: 0%;
 }
 .sidebar {
   padding: 2em;
@@ -140,7 +165,7 @@ footer div {
   text-align: center;
 }
 .question {
-  font: normal 300 32px/1.2 "Roboto", sans-serif;
+  font: normal 300 20px/1.2 "Roboto", sans-serif;
   padding: 0 10%;
   align-self: center;
 }
@@ -216,4 +241,14 @@ input {
   border: 1px solid rgba(0,0,0,.5);
   font: normal 400 16px/1.64 "Roboto", sans-serif;
   padding: .2em .4em;
+}
+
+
+@media only screen and (min-device-width: 480px) {
+  #state {
+    font-size: 48px;
+  }
+  .question {
+    font-size: 32px;
+  }
 }

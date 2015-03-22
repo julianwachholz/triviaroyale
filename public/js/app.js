@@ -64,6 +64,8 @@ ws.addEventListener('message', function (message) {
         for (key in data.setinfo) {
             document.getElementById(key).innerHTML = data.setinfo[key];
             if (key === 'playername') {
+                changename.innerHTML = 'Change name';
+                changepassword.classList.remove('hidden');
                 localStorage.setItem('playername', data.setinfo[key]);
                 chatinput.disabled = false;
                 chatinput.focus();
@@ -217,7 +219,7 @@ function inputHistory(max_history) {
     return function (event) {
         switch (event.which) {
             case ENTER:
-            if (this.value.trim().length) {
+            if (this.value.trim().length > 0) {
                 history[current] = this.value;
                 history.unshift('');
                 current = 0;
@@ -251,8 +253,17 @@ function inputHistory(max_history) {
 document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', chatHandler);
     chatinput.addEventListener('keydown', inputHistory());
-    playername.addEventListener('click', function (event) {
+
+    menu.addEventListener('click', function (event) {
         event.preventDefault();
+        this.classList.toggle('open');
+        aside.classList.toggle('open');
+    });
+
+    changename.addEventListener('click', function (event) {
+        event.preventDefault();
+        menu.classList.toggle('open');
+        aside.classList.toggle('open');
         modalPrompt('Change your player name!', function (name) {
             if (name) {
                 ws.send(JSON.stringify({login: name}));
@@ -262,6 +273,9 @@ document.addEventListener('DOMContentLoaded', function () {
     changepassword.addEventListener('click', function (event) {
         var playername;
         event.preventDefault();
+        menu.classList.toggle('open');
+        aside.classList.toggle('open');
+
         playername = localStorage.getItem('playername');
         if (playername) {
             window.modal('password', {login: playername});
