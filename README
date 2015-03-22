@@ -1,0 +1,6 @@
+trivia
+======
+
+An online game of trivia questions using websockets and python built on top of
+its new asyncio feature.
+
