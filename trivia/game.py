@@ -48,6 +48,7 @@ class TriviaGame(object):
         self.player_count = 0
         self._reset_hints()
         self._reset_streak()
+        self._reset_votes()
 
     def get_round_info(self):
         elapsed_time = (time.time() - self.timer_start) if self.round else 0
@@ -75,10 +76,13 @@ class TriviaGame(object):
                 game += ('<p><b>{round.solver.name}</b> got '
                          '<b>{round.points}</b> points for answering in <b>{round.time_taken:.2f}s</b>:'
                          '<br>{round.question.question}</p>').format(round=self.round)
-                game += '<p>Correct answer:<br><b>{}</b></p>'.format(answer)
+                game += '<p>Correct answer: <b>{}</b></p>'.format(answer)
             else:
                 game += ('<p>{round.question.question}</p><p><b>Time\'s up!</b> '
                          'Nobody got the answer: <b>{answer}</b></p>').format(round=self.round, answer=answer)
+
+            game += ('<p id="question-vote" class="question-vote">Did you like this question? '
+                     '<a href="javascript:vote(1);">Yes</a> / <a href="javascript:vote(-1);">No</a></p>')
 
             timer = ('<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
                      '<div class="timer-value">Next round in: <span>{time_left}</span>s</div>').format(
@@ -214,6 +218,8 @@ class TriviaGame(object):
 
     @asyncio.coroutine
     def start_new_round(self):
+        self.save_votes()
+
         with db_session():
             try:
                 new_round = Round.new(self.round_start)
@@ -226,10 +232,15 @@ class TriviaGame(object):
         self.state = self.STATE_QUESTION
         self.timer_start = time.time()
         self._reset_hints()
+        self._reset_votes()
         self.broadcast_info()
 
     @asyncio.coroutine
     def round_timeout(self):
+        """
+        If this future isn't canceled the round will end with no winner.
+
+        """
         yield from asyncio.sleep(self.ROUND_TIME)
         with db_session():
             end_round = Round[self.round.id]
@@ -297,6 +308,41 @@ class TriviaGame(object):
             self.hints['count'] += 1
             self.hints['current'] = self.round.question.get_hint(self.hints['count'])
             self.broadcast_info()
+
+    def _reset_votes(self):
+        self.votes = {
+            'players': set(),
+            'up': 0,
+            'down': 0,
+        }
+
+    def queue_vote(self, player_name, value):
+        """
+        Try to queue a vote during the waiting phase between rounds.
+
+        """
+        if self.state != self.STATE_WAITING or self.round is None:
+            return False
+
+        if player_name not in self.votes['players']:
+            self.votes['players'].add(player_name)
+            if value == 1:
+                self.votes['up'] += 1
+            elif value == -1:
+                self.votes['down'] += 1
+            return True
+        return False
+
+    def save_votes(self):
+        if self.round is not None:
+            print("*** VOTES #{}: +{} -{} by {!r}".format(
+                self.round.id, self.votes['up'], self.votes['down'], self.votes['players']))
+            with db_session():
+                q = Question[self.round.question.id]
+                q.set(
+                    vote_up=q.vote_up + self.votes['up'],
+                    vote_down=q.vote_down + self.votes['down']
+                )
 
 
 class AdminCommand(object):

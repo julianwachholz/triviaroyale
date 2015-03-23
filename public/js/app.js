@@ -145,6 +145,13 @@ window.modal = function (which, data) {
 };
 
 /**
+ * rate the previous question if possible.
+ */
+window.vote = function (updown) {
+    ws.send(JSON.stringify({command: 'vote', vote: updown}));
+};
+
+/**
  * append a chat message
  */
 function chatMessage(text, system, time) {

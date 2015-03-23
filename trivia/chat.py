@@ -99,6 +99,22 @@ class GameController(object):
             'system': 'Password successfully changed!',
         }))
 
+    def command(self, ws, command, args):
+        if hasattr(self, command):
+            getattr(self, command)(ws, args)
+
+    def vote(self, ws, args):
+        value = args.get('vote', 0)
+        if value in (-1, 1):
+            try:
+                player_name = self.players[ws]['name']
+            except KeyError:
+                return
+            if self.trivia.queue_vote(player_name, value):
+                asyncio.async(self.send(ws, {'setinfo': {
+                    'question-vote':  '<p class="question-vote">Thank you!</p>',
+                }}))
+
     @db_session
     def login(self, ws, name, password=None, auto=False):
         if ws in self.players.keys():

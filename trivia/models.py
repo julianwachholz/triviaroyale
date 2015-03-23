@@ -40,7 +40,7 @@ class Question(db.Entity):
     STREAK_MODIFIER = 1.05
 
     MASK_CHAR = '_'
-    COMMON_WORDS = ['the', 'a', 'an', 'and']
+    COMMON_WORDS = ['the', 'a', 'an', 'and', 'of']
 
     active = Required(bool, default=False)
 
@@ -53,6 +53,9 @@ class Question(db.Entity):
 
     times_played = Required(int, default=0)
     times_solved = Required(int, default=0)
+
+    vote_up = Required(int, default=0)
+    vote_down = Required(int, default=0)
 
     date_added = Required(datetime, sql_default='CURRENT_TIMESTAMP')
     date_modified = Required(datetime, sql_default='CURRENT_TIMESTAMP')
