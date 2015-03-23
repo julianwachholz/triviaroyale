@@ -1,6 +1,13 @@
-trivia
+Trivia
 ======
 
 An online game of trivia questions using websockets and python built on top of
 its new asyncio feature.
 
+
+TODO
+----
+
+- Submit new question
+- Report question
+- Rate questions (good/bad or like/dislike)

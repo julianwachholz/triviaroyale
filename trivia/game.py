@@ -1,8 +1,9 @@
 import asyncio
 import time
-from datetime import datetime
+import math
 import re
 import logging
+from datetime import datetime
 
 from .models import *
 
@@ -21,11 +22,13 @@ class TriviaGame(object):
     STATE_LOCKED = 'locked'
 
     ROUND_TIME = 45.0
-    WAIT_TIME = 15.0
+    WAIT_TIME = 10.0
+    WAIT_TIME_EXTRA = 7.0
     INACTIVITY_TIMEOUT = ROUND_TIME * 4
 
     STREAK_STEPS = 5
-    HINT_TIMEOUT = 10.0
+    HINT_TIMING = 10.0
+    HINT_COOLDOWN = 2.5
     HINT_MAX = 3
 
     RE_START = re.compile(r'^!start', re.I)
@@ -195,11 +198,11 @@ class TriviaGame(object):
         wait = self.WAIT_TIME
 
         if new_round:
-            wait = self.WAIT_TIME / 3
+            wait = self.WAIT_TIME / 2
             self.round_start = datetime.now()
             self._reset_streak()
             asyncio.async(self.broadcast({
-                'system': "New round starting in {}s!".format(wait),
+                'system': "New round starting in {:.2f}s!".format(wait),
             }))
 
         yield from asyncio.sleep(wait)
@@ -279,21 +282,28 @@ class TriviaGame(object):
         }
 
     def get_hint(self):
-        if self.hints['count'] >= self.HINT_MAX:
+        if self.state != self.STATE_QUESTION or self.hints['count'] >= self.HINT_MAX:
             return
 
         now = time.time()
-        hint_cooldown = now - self.hints['time']
-        if hint_cooldown > self.HINT_TIMEOUT:
+        elapsed_time = now - self.timer_start
+        current_max_hints = math.ceil(elapsed_time / self.HINT_TIMING)
+
+        if now - self.hints['time'] < self.HINT_COOLDOWN:
+            return
+
+        if current_max_hints > self.hints['count']:
+
+            print("*** HINT #{} - after {:.2f}s (max {})".format(
+                self.hints['count'] + 1,
+                elapsed_time,
+                current_max_hints
+            ))
+
             self.hints['time'] = now
             self.hints['count'] += 1
             self.hints['current'] = self.round.question.get_hint(self.hints['count'])
             self.broadcast_info()
-        elif now - self.hints['cooldown'] > self.HINT_TIMEOUT:
-            self.hints['cooldown'] = now
-            asyncio.async(self.broadcast({
-                'system': "Please wait {:.2f}s for a new hint.".format(self.HINT_TIMEOUT - hint_cooldown),
-            }))
 
 
 class AdminCommand(object):
