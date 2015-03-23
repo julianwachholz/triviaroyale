@@ -293,13 +293,6 @@ class TriviaGame(object):
             return
 
         if current_max_hints > self.hints['count']:
-
-            print("*** HINT #{} - after {:.2f}s (max {})".format(
-                self.hints['count'] + 1,
-                elapsed_time,
-                current_max_hints
-            ))
-
             self.hints['time'] = now
             self.hints['count'] += 1
             self.hints['current'] = self.round.question.get_hint(self.hints['count'])
