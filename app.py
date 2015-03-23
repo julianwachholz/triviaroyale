@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import ssl
+import time
 import websockets
 
 from trivia.game import TriviaGame
@@ -13,12 +14,17 @@ from trivia.models import *
 
 class GameController(object):
     """
-    Game controller handling users and game interaction.
+    Controller handles users and interaction with them.
+
+    Login/passwords and chat interaction goes through this.
 
     """
+    CHAT_SCROLLBACK = 20
+
     def __init__(self):
         self.clients = set()
         self.players = {}
+        self.chat_scrollback = []
 
     def join(self, ws):
         """
@@ -140,13 +146,21 @@ class GameController(object):
                           'click here to set a password!</a>'.format(player.name),
             }))
         asyncio.async(send(ws, {'setinfo': trivia.get_round_info()}))
+        asyncio.async(send(ws, self.chat_scrollback))
 
     def chat(self, ws, text):
         player = self.players[ws]
-        asyncio.async(broadcast({
+        entry = {
             'player': player['name'],
             'text': text,
-        }))
+        }
+        asyncio.async(broadcast(entry))
+        entry.update(time=int(time.time()))
+
+        self.chat_scrollback.append(entry)
+        if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
+            self.chat_scrollback = self.chat_scrollback[1:]
+
         asyncio.async(trivia.chat(player, text))
 
 

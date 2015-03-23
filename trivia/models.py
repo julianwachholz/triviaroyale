@@ -9,7 +9,7 @@ from passlib.hash import bcrypt_sha256
 
 
 db = Database()
-sql_debug(bool(os.environ.get('DEBUG', False)))
+sql_debug(bool(os.environ.get('SQL_DEBUG', False)))
 
 
 class Category(db.Entity):

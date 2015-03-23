@@ -47,12 +47,19 @@ ws.addEventListener('error', function (event) {
 });
 ws.addEventListener('message', function (message) {
     var data = JSON.parse(message.data);
+    if (data instanceof Array) {
+        data.forEach(handleMessage);
+    } else {
+        handleMessage(data);
+    }
+});
 
+function handleMessage(data) {
     if (data.pong) {
         checkLatency(data.pong);
     }
     if (data.player && data.text) {
-        chatMessage(data.player + ': ' + data.text);
+        chatMessage(data.player + ': ' + data.text, false, data.time);
     }
     if (data.system) {
         chatMessage(data.system, true);
@@ -75,7 +82,7 @@ ws.addEventListener('message', function (message) {
             }
         }
     }
-});
+}
 
 ws.open();
 
@@ -140,19 +147,23 @@ window.modal = function (which, data) {
 /**
  * append a chat message
  */
-function chatMessage(text, system) {
-    var message = document.createElement('p'), now = new Date();
+function chatMessage(text, system, time) {
+    var message = document.createElement('p'),
+        tstamp = new Date();
     if (system) {
         message.classList.add('system');
-        text = '<strong>System:</strong> ' + text;
+        text = '<strong>Trivia:</strong> ' + text;
     } else {
         text = escapeHTML(text);
         text = autolink(text);
+        if (!!time) {
+            tstamp = new Date(1000 * time);
+        }
     }
     message.innerHTML = '<span>' + text + '</span>';
-    message.innerHTML += '<time>' + (now.getHours() < 10 ? '0' : '') + now.getHours() + ':'
-                      + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes() + ':'
-                      + (now.getSeconds() < 10 ? '0' : '') + now.getSeconds() + '</time>';
+    message.innerHTML += '<time>' + (tstamp.getHours() < 10 ? '0' : '') + tstamp.getHours() + ':'
+                      + (tstamp.getMinutes() < 10 ? '0' : '') + tstamp.getMinutes() + ':'
+                      + (tstamp.getSeconds() < 10 ? '0' : '') + tstamp.getSeconds() + '</time>';
     chat.appendChild(message);
 
     if (chat.scrollHeight - chat.scrollTop < 500) {
