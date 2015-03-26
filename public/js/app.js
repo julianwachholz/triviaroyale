@@ -100,9 +100,12 @@ function checkLatency(time) {
     }, 5000);
 }
 
-function modalPrompt(prompt, callback, allowEmpty) {
+function modalPrompt(prompt, options, callback) {
     var wasDisabled = chatinput.disabled;
     form.removeEventListener('submit', chatHandler);
+    if (options.hasOwnProperty('max')) {
+        chatinput.maxLength = options.max;
+    }
     chatinput.disabled = false;
     chatinput.placeholder = prompt;
     chatinput.focus();
@@ -110,8 +113,9 @@ function modalPrompt(prompt, callback, allowEmpty) {
     form.addEventListener('submit', function modalHandler(event) {
         var value = chatinput.value;
         event.preventDefault();
-        if (value || allowEmpty) {
+        if (value || options.hasOwnProperty('allowEmpty') && options.allowEmpty) {
             chatinput.placeholder = '';
+            chatinput.maxLength = 250;
             form.removeEventListener('submit', modalHandler);
             form.addEventListener('submit', chatHandler);
             if (wasDisabled) {
@@ -127,7 +131,7 @@ function modalPrompt(prompt, callback, allowEmpty) {
 
 window.modal = function (which, data) {
     if (which === 'login') {
-        modalPrompt('Please choose your player name!', function (name) {
+        modalPrompt('Please choose your player name!', {max: 40}, function (name) {
             ws.send(JSON.stringify({login: name}));
         });
     }
@@ -282,11 +286,11 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         menu.classList.toggle('open');
         aside.classList.toggle('open');
-        modalPrompt('Change your player name!', function (name) {
+        modalPrompt('Change your player name!', {allowEmpty: true, max: 40}, function (name) {
             if (name) {
                 ws.send(JSON.stringify({login: name}));
             }
-        }, true);
+        });
     });
     changepassword.addEventListener('click', function (event) {
         var playername;

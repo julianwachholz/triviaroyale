@@ -117,6 +117,9 @@ class GameController(object):
 
     @db_session
     def login(self, ws, name, password=None, auto=False):
+        if len(name) > Player.NAME_MAX_LEN:
+            return
+
         if ws in self.players.keys():
             if password is not None:
                 return self._set_password(ws, password)

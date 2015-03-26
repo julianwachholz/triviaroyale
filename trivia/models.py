@@ -169,6 +169,7 @@ class Player(db.Entity):
     A player.
 
     """
+    NAME_MAX_LEN = 40
     BCRYPT_ROUNDS = 11
     PERMISSIONS = [
         '__EVERYTHING__',
@@ -178,7 +179,7 @@ class Player(db.Entity):
         'next',
     ]
 
-    name = Required(str, 40, unique=True)
+    name = Required(str, NAME_MAX_LEN, unique=True)
     password_hash = Optional(str, 200)
     email = Optional(str, 200)
     permissions = Required(int, default=0)
