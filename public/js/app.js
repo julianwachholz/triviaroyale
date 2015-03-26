@@ -62,7 +62,7 @@ function handleMessage(data) {
         chatMessage(data.player + ': ' + data.text, false, data.time);
     }
     if (data.system) {
-        chatMessage(data.system, true);
+        chatMessage(data.system, true, null, data.system_extra);
     }
     if (data.prompt) {
         window.modal(data.prompt, data.data);
@@ -140,7 +140,7 @@ window.modal = function (which, data) {
             console.warn('modal password without login called');
             return;
         }
-        modalPrompt('Enter password for ' + data.login + ':', function (password) {
+        modalPrompt('Enter password for ' + data.login + ':', {}, function (password) {
             localStorage.setItem('password', password);
             data.password = password;
             ws.send(JSON.stringify(data));
@@ -158,12 +158,15 @@ window.vote = function (updown) {
 /**
  * append a chat message
  */
-function chatMessage(text, system, time) {
+function chatMessage(text, system, time, extra) {
     var message = document.createElement('p'),
         tstamp = new Date();
     if (system) {
         message.classList.add('system');
-        text = '<strong>Trivia:</strong> ' + text;
+        text = '<strong>Trivia:</strong> ' + formatText(escapeHTML(text));
+        if (!!extra) {
+            text +=  ' ' + extra;
+        }
     } else {
         text = escapeHTML(text);
         text = autolink(text);
@@ -197,6 +200,12 @@ function autolink(text) {
     return text.replace(
         /\b(https?:\/\/[\-A-Z0-9+\u0026\u2019@#\/%?=()~_|!:,.;]*[\-A-Z0-9+\u0026@#\/%=~()_|])\b/ig,
         '<a href="$1" target="_blank">$1</a>'
+    );
+}
+function formatText(text) {
+    return text.replace(
+        /\*([^\*]+)\*/ig,
+        '<b>$1</b>'
     );
 }
 function escapeHTML(text) {

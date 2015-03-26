@@ -12,6 +12,8 @@ from trivia.game import TriviaGame
 from trivia.models import *
 
 
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
+
 game = GameController()
 
 
@@ -81,10 +83,6 @@ if __name__ == '__main__':
     game.trivia = trivia
     game.send = send
     game.broadcast = broadcast
-
-    logger = logging.getLogger('trivia.game')
-    logger.setLevel(logging.INFO)
-    logger.addHandler(logging.StreamHandler())
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(server)

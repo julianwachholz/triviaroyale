@@ -139,6 +139,7 @@ class TriviaGame(object):
             if self.state == self.STATE_IDLE:
                 if self.RE_START.search(text):
                     self.timeout = asyncio.async(self.delay_new_round(new_round=True))
+                    logger.info('{}(#{}) started new round'.format(player['name'], player['id']))
 
     @asyncio.coroutine
     def round_solved(self, player):
@@ -149,7 +150,7 @@ class TriviaGame(object):
             if self.streak['count'] % self.STREAK_STEPS == 0:
                 self.announce_streak(player['name'])
         else:
-            if self.streak['count'] > self.STREAK_STEPS:
+            if self.streak['count'] >= self.STREAK_STEPS:
                 self.announce_streak(player['name'], broken=True)
             self.streak = {
                 'player_id': player['id'],
@@ -168,7 +169,11 @@ class TriviaGame(object):
             )
             played_round.end_round()
             self.round = played_round
+
         asyncio.async(self.round_end())
+        logger.info('#{} END: {} for {} points ({} hints used) in {:.2f}s: {}'.format(
+            self.round.id, self.round.solver, self.round.points, self.hints['count'],
+            self.round.time_taken, self.round.question))
 
     def next_round(self):
         """
@@ -213,6 +218,8 @@ class TriviaGame(object):
 
         if self.player_count < 1 or time.time() - self.last_action > self.INACTIVITY_TIMEOUT:
             self.stop_game()
+            logger.info('No activity, stopping game. ({} players online, {:.2f}s)'.format(
+                self.player_count, time.time() - self.last_action))
         else:
             asyncio.async(self.start_new_round())
 
@@ -246,6 +253,7 @@ class TriviaGame(object):
             end_round = Round[self.round.id]
             end_round.end_round()
             self.round = end_round
+        logger.info('#{} END NO WINNER: {}'.format(self.round.id, self.round.question))
         asyncio.async(self.round_end())
 
     @asyncio.coroutine
@@ -273,16 +281,15 @@ class TriviaGame(object):
     def announce_streak(self, player_name, broken=False):
         streak = self.streak['count']
         if broken:
-            asyncio.async(self.broadcast({
-                'system': "{} broke {}'s streak of <b>{}</b>!".format(player_name, self.streak['player_name'], streak),
-            }))
+            info = "{} broke {}'s streak of *{}*!".format(player_name, self.streak['player_name'], streak)
         else:
-            info = "{} has reached a streak of <b>{}</b>!".format(player_name, streak)
+            info = "{} has reached a streak of *{}*!".format(player_name, streak)
             if streak == self.STREAK_STEPS:
-                info += " You can skip to the next round with <kbd>!next</kbd>."
-            asyncio.async(self.broadcast({
-                'system': info,
-            }))
+                info += " You can skip to the next round with *!next*"
+        logger.info('#{} STREAK: {}'.format(self.round.id, info))
+        asyncio.async(self.broadcast({
+            'system': info,
+        }))
 
     def _reset_hints(self):
         self.hints = {
@@ -335,7 +342,7 @@ class TriviaGame(object):
 
     def save_votes(self):
         if self.round is not None:
-            print("*** VOTES #{}: +{} -{} by {!r}".format(
+            logger.info("#{} VOTES: +{} -{} by {!r}".format(
                 self.round.id, self.votes['up'], self.votes['down'], self.votes['players']))
             with db_session():
                 q = Question[self.round.question.id]

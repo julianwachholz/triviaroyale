@@ -1,7 +1,11 @@
 import asyncio
 import time
+import logging
 
 from trivia.models import *
+
+
+logger = logging.getLogger(__name__)
 
 
 class GameController(object):
@@ -39,16 +43,17 @@ class GameController(object):
         """
         if ws in self.clients:
             if ws in self.players:
-                name = self.players[ws]['name']
+                player = self.players[ws]
                 del self.players[ws]
                 self.trivia.player_count -= 1
                 asyncio.async(self.broadcast({
-                    'system': "{} left.".format(name),
+                    'system': "{} left.".format(player['name']),
                     'setinfo': self._get_player_info(),
                 }))
+                logger.info('GAME LEAVE: {} (#{})'.format(player['name'], player['id']))
             self.clients.remove(ws)
 
-    def _set_name(self, ws, name, old_name=None):
+    def _set_name(self, ws, player_id, name, old_name=None):
         asyncio.async(self.send(ws, {'setinfo': {
             'playername': name,
         }}))
@@ -58,30 +63,32 @@ class GameController(object):
                 'system': "{} joined.".format(name),
                 'setinfo': self._get_player_info(),
             }))
+            logger.info('GAME JOIN: {} (#{})'.format(name, player_id))
         else:
             asyncio.async(self.broadcast({
-                'system': "{} is now known as <b>{}</b>.".format(old_name, name),
+                'system': "{} is now known as *{}*.".format(old_name, name),
                 'setinfo': self._get_player_info(),
             }))
+            logger.info('GAME RENAME: {} (#{}) was: {}'.format(name, player_id, old_name))
 
     def _rename_player(self, ws, new_name):
         player = self.players[ws]
 
         if player['name'] == new_name:
             asyncio.async(self.send(ws, {
-                'system': 'You are already known as <b>{}</b>.'.format(new_name),
+                'system': 'You are already known as *{}*.'.format(new_name),
             }))
         else:
             with db_session():
                 if exists(p for p in Player if p.name == new_name):
                     asyncio.async(self.send(ws, {
-                        'system': 'This name is not available: <b>{}</b>.'.format(new_name),
+                        'system': 'This name is not available: *{}*.'.format(new_name),
                     }))
                 else:
                     old_name = player['name']
                     player['name'] = new_name
                     Player[player['id']].set(name=new_name)
-                    self._set_name(ws, new_name, old_name=old_name)
+                    self._set_name(ws, player['id'], new_name, old_name=old_name)
 
     def _get_player_info(self):
         names = map(lambda player: player['name'], self.players.values())
@@ -98,6 +105,7 @@ class GameController(object):
         asyncio.async(self.send(ws, {
             'system': 'Password successfully changed!',
         }))
+        logger.info('GAME PASSWD: {} set new password.'.format(name, player))
 
     def command(self, ws, command, args):
         if hasattr(self, command):
@@ -139,9 +147,9 @@ class GameController(object):
                 return
             else:
                 asyncio.async(self.send(ws, {
-                    'system': 'Invalid username/password! '
-                              '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
-                              'Try again</a>'.format(name),
+                    'system': 'Invalid username/password!',
+                    'system_extra': '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
+                                    'Try again</a>'.format(name),
                 }))
                 return
 
@@ -152,13 +160,13 @@ class GameController(object):
             'name': player.name,
             'permissions': player.permissions,
         }
-        self._set_name(ws, player.name)
+        self._set_name(ws, player.id, player.name)
 
         if not player.has_password():
             asyncio.async(self.send(ws, {
-                'system': 'You currently have no password, '
-                          '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
-                          'click here to set a password!</a>'.format(player.name),
+                'system': 'You currently have no password!',
+                'system_extra': '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
+                                'click here to set a password!</a>'.format(player.name),
             }))
         asyncio.async(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
         asyncio.async(self.send(ws, self.chat_scrollback))

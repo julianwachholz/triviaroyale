@@ -65,6 +65,9 @@ class Question(db.Entity):
     reports = Set('Report')
     player = Optional('Player')
 
+    def __str__(self):
+        return '{} *** {}'.format(self.question, self.primary_answer)
+
     @property
     def primary_answer(self):
         return self.answer.split('|')[0]
@@ -190,6 +193,9 @@ class Player(db.Entity):
     rounds_solved = Set('Round')
     submitted_reports = Set('Report')
     submitted_questions = Set(Question)
+
+    def __str__(self):
+        return '{} (#{})'.format(self.name, self.id)
 
     def logged_in(self):
         self.last_played = datetime.now()
