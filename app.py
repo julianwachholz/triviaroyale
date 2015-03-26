@@ -64,7 +64,7 @@ def broadcast(message):
 
 if __name__ == '__main__':
     listen_ip = os.environ.get('LISTEN_IP', 'localhost')
-    listen_port = int(os.environ.get('LISTEN_PORT', 8765))
+    listen_port = int(os.environ.get('LISTEN_PORT', 8080))
 
     if 'CERT_FILE' in os.environ and 'CERT_KEY' in os.environ:
         secure = ssl.SSLContext(ssl.PROTOCOL_SSLv23)

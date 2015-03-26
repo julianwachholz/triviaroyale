@@ -1,6 +1,6 @@
 (function (window, document) {
 
-var WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8765',
+var WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8080',
     ws = new ReconnectingWebSocket(WS_ADDR, null, {
         automaticOpen: false,
         maxReconnectAttempts: 5
