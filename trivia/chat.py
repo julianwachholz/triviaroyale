@@ -105,7 +105,7 @@ class GameController(object):
         asyncio.async(self.send(ws, {
             'system': 'Password successfully changed!',
         }))
-        logger.info('GAME PASSWD: {} set new password.'.format(name, player))
+        logger.info('GAME PASSWD: {} set new password.'.format(player))
 
     def command(self, ws, command, args):
         if hasattr(self, command):
