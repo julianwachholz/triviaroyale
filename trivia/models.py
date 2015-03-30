@@ -37,6 +37,7 @@ class Question(db.Entity):
     MIN_POINTS = 100
     BASE_POINTS = 500
     MIN_PLAYED_ROUNDS = 3
+    HINTS_PENALTY = 0.5
     STREAK_MODIFIER = 1.05
 
     MASK_CHAR = '_'
@@ -128,6 +129,8 @@ class Question(db.Entity):
         """
         Give some hints about the answer.
 
+        :param num: Hint number from 1 - 3
+
         """
         answer = self.primary_answer
 
@@ -152,7 +155,19 @@ class Question(db.Entity):
         """
         Calculate how many points answering this question got someone.
 
-        Here be dragons and crude math, mostly bad math though.
+        If a question has been played several times and was never correctly
+        answered the possible awarded points for this question will grow
+        on a logarithmic scale.
+
+        Furthermore, an ongoing streak of a player will slowly increase
+        base awarded points exponentially (winning consecutive rounds, not
+        counting unsolved rounds).
+
+        Anything beyond the first hint will also reduce the points
+        awarded, as guessing the answer becomes easier with them.
+
+        At last, we'll make sure that even the latest possible answer will
+        get a bare minimum amount of points.
 
         """
         if self.times_played < self.MIN_PLAYED_ROUNDS:
@@ -160,11 +175,17 @@ class Question(db.Entity):
         else:
             difficulty_factor = 0.5
             difficulty_factor += 1 / math.log10(max(self.solve_percentage, 1.1))  # prevent division by zero
+
         base_points = self.BASE_POINTS * difficulty_factor
         base_points *= self.STREAK_MODIFIER ** (streak - 1)
-        if hints == 1:
-            hints = 0.2  # first hint won't substract too much points
-        return int(max(self.MIN_POINTS, base_points * (1 - time_percentage)) / (1 + hints * 0.5))
+
+        penalty = 1
+        if hints > 0:
+            # first hint does not reduce points
+            penalty += (hints - 1) * self.HINTS_PENALTY
+
+        base = max(self.MIN_POINTS, base_points * (1 - time_percentage))
+        return int(base / penalty)
 
 
 class Player(db.Entity):
