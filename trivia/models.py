@@ -25,17 +25,23 @@ class Question(db.Entity):
     """
     Question objects.
 
-    Multiple answers are separated using "|"
+    Multiple answers are separated using "|".
+
+    TODO: Remove questions based on ratings relative to the number
+          of times they have been played.
 
     """
     GET_RANDOM_SQL = """
         SELECT * FROM question
-        WHERE active = true AND last_played < $round_start
+        WHERE active = true
+        AND last_played < $round_start
+        AND (vote_up - vote_down) > $min_rating
         ORDER BY RANDOM() * (GREATEST(times_solved, 1) / (SELECT SUM(times_solved)+1 FROM question)::float)
         LIMIT 100
     """
     MIN_POINTS = 100
     BASE_POINTS = 500
+    MIN_RATING = -3  # Questions with lower rating will not be played
     MIN_PLAYED_ROUNDS = 3
     HINTS_PENALTY = 0.5
     STREAK_MODIFIER = 1.05
@@ -272,10 +278,13 @@ class Round(db.Entity):
     @classmethod
     def new(cls, round_start):
         """
-        Select a question and start a new round.
+        Select a new random question for a new round.
 
         """
-        question = Question.select_by_sql(Question.GET_RANDOM_SQL)[0]
+        question = Question.select_by_sql(Question.GET_RANDOM_SQL, locals={
+            'round_start': round_start,
+            'min_rating': Question.MIN_RATING,
+        })[0]
         return cls(question=question)
 
     @db_session
