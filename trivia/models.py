@@ -98,7 +98,7 @@ class Question(db.Entity):
         return self.answer_re.search(answer) is not None
 
     def _mask_word(self, word, vowels_fn=None, consonants_fn=None):
-        if word in self.COMMON_WORDS:
+        if word.lower() in self.COMMON_WORDS:
             return word
 
         word_len = len(word)
