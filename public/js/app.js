@@ -214,29 +214,49 @@ function escapeHTML(text) {
     return div.innerHTML;
 }
 
-function animateTimer(timer) {
+function animateTimer() {
     var timerBar = document.querySelector('.timer-bar'),
         timerValue = document.querySelector('.timer-value span'),
-        seconds;
+        COLOR_START = [0, 255, 0, 0.25],
+        COLOR_END = [255, 0, 0, 0.25],
+        timeTotal, timeLeft, timeout = 0.1;
 
     if (timerBar) {
-        seconds = parseFloat(timerBar.getAttribute('data-time-left'));
-        timerBar.style.transition = 'width ' + (seconds - 0.1) + 's linear, background ' + (seconds - 0.1) + 's linear';
-        (function countdown(seconds) {
-            if (seconds > 0) {
-                timerValue.innerHTML = seconds.toFixed(1);
-                setTimeout(function () { countdown(seconds - 0.1) }, 100);
+        timeTotal = parseFloat(timerBar.getAttribute('data-total-time'));
+        timeLeft = parseFloat(timerBar.getAttribute('data-time-left'));
+
+        if (!timerBar.classList.contains('colorless')) {
+            timerBar.style.backgroundColor = gradient(COLOR_START, COLOR_END, timeLeft / timeTotal);
+        }
+        timerBar.style.transition = 'width ' + (timeLeft - timeout) + 's linear, background ' + (timeLeft - 0.1) + 's linear';
+
+        (function countdown(timeLeft) {
+            if (timeLeft > 0) {
+                timerValue.innerHTML = timeLeft.toFixed(1);
+                setTimeout(function () { countdown(timeLeft - timeout) }, 100);
             } else {
                 timerValue.innerHTML = '0.0';
             }
-        }(seconds));
+        }(timeLeft));
+
         setTimeout(function () {
             timerBar.style.width = '0%';
             if (!timerBar.classList.contains('colorless')) {
-                timerBar.style.backgroundColor = 'rgba(255,0,0,0.25)';
+                timerBar.style.backgroundColor = rgba(COLOR_END);
             }
-        }, 100);
+        }, timeout * 1000);
     }
+}
+
+function gradient(from, to, percent) {
+    var r = parseInt(to[0] + percent * (from[0] - to[0])),
+        g = parseInt(to[1] + percent * (from[1] - to[1])),
+        b = parseInt(to[2] + percent * (from[2] - to[2])),
+        a = to[3] + percent * (from[3] - to[3]);
+    return rgba([r,g,b,a]);
+}
+function rgba(rgba) {
+    return 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+','+rgba[3]+')';
 }
 
 function inputHistory(max_history) {

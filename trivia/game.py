@@ -63,9 +63,11 @@ class TriviaGame(object):
             if self.hints['current'] is not None:
                 game += '<p class="question-hint">Hint: {}</p>'.format(self.hints['current'])
 
-            timer = ('<div class="timer-bar" style="width:{width}%" data-time-left="{time_left}"></div>'
+            timer = ('<div class="timer-bar" style="width:{width}%" '
+                     'data-total-time="{total_time}" data-time-left="{time_left}"></div>'
                      '<div class="timer-value"><span>{time_left:.2f}</span>s</div>').format(
                 width=(self.ROUND_TIME - elapsed_time) / self.ROUND_TIME * 100.0,
+                total_time=self.ROUND_TIME,
                 time_left=self.ROUND_TIME - elapsed_time,
             )
 
