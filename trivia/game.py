@@ -23,7 +23,8 @@ class TriviaGame(object):
 
     ROUND_TIME = 45.0
     WAIT_TIME = 10.0
-    WAIT_TIME_EXTRA = 7.0
+    WAIT_TIME_MIN = 2.5
+    WAIT_TIME_EXTRA = 7.0  # When showing additional info after a round
     INACTIVITY_TIMEOUT = ROUND_TIME * 4
 
     STREAK_STEPS = 5
@@ -133,8 +134,9 @@ class TriviaGame(object):
                     self.get_hint()
 
             if self.state == self.STATE_WAITING:
-                if self.RE_NEXT.search(text) and self.has_streak(player):
-                    self.next_round()
+                if self.RE_NEXT.search(text) and self.has_streak(player) and \
+                   time.time() - self.timer_start > self.WAIT_TIME_MIN:
+                        self.next_round()
 
             if self.state == self.STATE_IDLE:
                 if self.RE_START.search(text):
