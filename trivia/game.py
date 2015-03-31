@@ -5,7 +5,7 @@ import re
 import logging
 from datetime import datetime
 
-from .models import *
+from .models import Round, Player, Question, db_session, commit
 
 
 logger = logging.getLogger(__name__)
@@ -159,7 +159,7 @@ class TriviaGame(object):
             }
 
         with db_session():
-            player_db = get(p for p in Player if p.name == player['name'])
+            player_db = Player.get(lambda p: p.name == player['name'])
             played_round = Round[self.round.id]
             played_round.solved_by(
                 player_db,

@@ -2,7 +2,7 @@ import asyncio
 import time
 import logging
 
-from trivia.models import *
+from trivia.models import Player, db_session, commit
 
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class GameController(object):
             }))
         else:
             with db_session():
-                if exists(p for p in Player if p.name == new_name):
+                if Player.exists(p for p in Player if p.name == new_name):
                     asyncio.async(self.send(ws, {
                         'system': 'This name is not available: *{}*.'.format(new_name),
                     }))
@@ -133,7 +133,7 @@ class GameController(object):
                 return self._set_password(ws, password)
             return self._rename_player(ws, name)
 
-        player = get(p for p in Player if p.name == name)
+        player = Player.get(lambda p: p.name == name)
 
         if player is None:
             player = Player(name=name)

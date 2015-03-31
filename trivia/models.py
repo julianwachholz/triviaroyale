@@ -1,10 +1,10 @@
 import os
 import re
-import time
 import math
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from pony.orm import *
+from pony.orm import Database, Required, Optional, Set
+from pony.orm import db_session, sql_debug, commit  # NOQA
 from passlib.hash import bcrypt_sha256
 
 
@@ -281,10 +281,8 @@ class Round(db.Entity):
         Select a new random question for a new round.
 
         """
-        question = Question.select_by_sql(Question.GET_RANDOM_SQL, locals={
-            'round_start': round_start,
-            'min_rating': Question.MIN_RATING,
-        })[0]
+        min_rating = Question.MIN_RATING  # NOQA locals passed to select_by_sql
+        question = Question.select_by_sql(Question.GET_RANDOM_SQL)[0]
         return cls(question=question)
 
     @db_session

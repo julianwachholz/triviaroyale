@@ -9,7 +9,7 @@ import websockets
 
 from trivia.chat import GameController
 from trivia.game import TriviaGame
-from trivia.models import *
+from trivia.models import db
 
 
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
