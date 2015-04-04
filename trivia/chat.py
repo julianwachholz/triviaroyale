@@ -80,7 +80,7 @@ class GameController(object):
             }))
         else:
             with db_session():
-                if Player.exists(p for p in Player if p.name == new_name):
+                if Player.exists(lambda p: p.name == new_name):
                     asyncio.async(self.send(ws, {
                         'system': 'This name is not available: *{}*.'.format(new_name),
                     }))
