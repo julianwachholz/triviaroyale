@@ -1,26 +1,22 @@
-* {
-  margin: 0;
-  padding: 0;
+html {
   box-sizing: border-box;
 }
-
-html, body {
-  font: normal 400 16px/1.64 "Roboto", sans-serif;
-  color: #222;
-  background: #fafafa;
+*, *:before, *:after {
+  margin: 0;
+  padding: 0;
+  box-sizing: inherit;
 }
-
 body {
   display: flex;
-  flex-flow: column;
+  flex-direction: column;
   height: 100vh;
-  overflow: hidden;
-}
-body.loading {
-  display: none;
+
+  font: normal 400 16px/1.64 "Roboto", sans-serif;
+  color: #212121;
+  background: #ffffff;
 }
 
-#state {
+.state-overlay {
   position: absolute;
   z-index: 2;
   display: flex;
@@ -30,10 +26,11 @@ body.loading {
   right: 0;
   bottom: 0;
   left: 0;
-  background: rgba(128, 128, 128, 0.75);
+  background: rgba(96, 125, 139, 0.75);  /* #607d8b blue-grey */
   font: normal 400 28px/2 "Roboto", sans-serif;
 }
-#state.hidden {
+
+.hidden {
   display: none;
 }
 
@@ -50,11 +47,12 @@ h2, h3, h4 {
   position: relative;
   z-index: 1;
   text-align: center;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  background: #4db6ac;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16),
+              0 2px 10px 0 rgba(0, 0, 0, 0.12);
 }
 
-.page-header h1, .page-header h4 {
+.page-header h1 {
   line-height: 50px;
 }
 
@@ -82,6 +80,43 @@ ul.unstyled {
   padding-left: 0;
   list-style: none;
 }
+button, .button {
+  border: none;
+  border-radius: 2px;
+  display: inline-block;
+  height: 50px;
+  line-height: 50px;
+  outline: 0;
+  padding: 0 2rem;
+  text-transform: uppercase;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  color: #ffffff;
+  background: #ba68c8;
+}
+button:hover, .button:hover {
+  background: #ab47bc;
+}
+
+button.tiny, .button.tiny {
+  height: 25px;
+  line-height: 1.6;
+  padding: 0 1rem;
+}
+
+button.positive, .button.positive {
+  background: #4caf50;
+}
+button.positive:hover, .button.positive:hover {
+  background: #43a047;
+}
+button.negative, .button.negative {
+  background: #f44336;
+}
+button.negative:hover, .button.negative:hover {
+  background: #e53935;
+}
 
 dl dt {
   float: left;
@@ -104,45 +139,39 @@ main {
   height: calc(100vh - 50px);
 }
 
-#menu {
+.page-header .menu-trigger {
   position: absolute;
   top: 0;
   right: 0;
-  border: none;
   width: 50px;
   height: 50px;
+  border: none;
   padding: 15px;
 }
-#menu h4 {
-  display: none;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -85%;
+.menu-trigger {
+  border-radius: 0;
 }
-#menu svg {
+.menu-trigger svg {
   position: relative;
   right: 0;
-  transition: margin-right .2s ease-out;
-}
-#menu.open svg {
-  margin-right: -40px;
 }
 
 aside {
-  position: absolute;
-  top: 50px;
-  right: -100%;
+  position: fixed;
+  top: 0;
+  right: -105%;
   transition: right .3s ease-in-out;
-  bottom: 0;
+  height: 100vh;
   width: 350px;
   max-width: 90%;
-  background: #fcfcfc;
-  box-shadow: -1px 0 3px rgba(0,0,0,.25);
-  font-size: 0.95em;
+  background: #ffffff;
+  color: #607d8b;
+  z-index: 2;
+  overflow-y: auto;
+  box-shadow: 0 8px 17px 0 rgba(0, 0, 0, 0.2),
+              0 6px 20px 0 rgba(0, 0, 0, 0.19);
   display: flex;
   flex-direction: column;
-  border-left: 1px solid rgba(0,0,0,0.1);
 }
 aside.open {
   right: 0%;
@@ -155,7 +184,6 @@ aside.open {
   overflow-y: auto;
 }
 footer.sidebar {
-  color: #888;
   flex: 1 1;
   display: flex;
 }
@@ -179,7 +207,7 @@ footer div {
   align-self: center;
 }
 .question-info {
-  opacity: 0.5;
+  color: #607d8b;
 }
 .question-categories {
 }
@@ -188,18 +216,21 @@ footer div {
 }
 .question-hint kbd {
   letter-spacing: .15em;
-  background: rgba(0,0,0,.1);
-  border: 1px solid rgba(0,0,0,.1);
+  background: rgba(96, 125, 139, .5);  /* #607d8b */
+  border: 1px solid rgba(96, 125, 139, .75);
   border-radius: .3em;
   padding: .3em;
+}
+.question-vote button {
+  margin: 0 .5rem;
 }
 
 .timer {
   font: normal 500 16px/1.5 "Roboto", sans-serif;
   position: relative;
-  background: rgba(0,0,0,0.05);
+  background: rgba(236, 239, 241, 1); /* eceff1 */
   height: 1.3em;
-  box-shadow: 0 10px 25px #fcfcfc;
+  box-shadow: 0 10px 25px #eceff1;
 }
 .timer div {
   position: absolute;
@@ -209,36 +240,34 @@ footer div {
   width: 100%;
   text-align: center;
 }
-.timer-bar {
-  background: rgba(0,255,0,0.25);
-}
 .timer-bar.colorless {
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, .1);
 }
 
 .chat {
   flex: 1;
   overflow-y: scroll;
   padding: 1em;
+  background: #eceff1;
 }
 .chat .system {
-  color: #888;
+  color: #607d8b;
 }
 .chat p {
   display: flex;
 }
 .chat a {
-  border-bottom: 1px solid #888;
+  border-bottom: 1px solid #607d8b;
 }
 .chat span {
   flex: 1;
 }
 .chat time {
   align-self: flex-end;
-  opacity: 0.1;
+  opacity: 0.25;
 }
 .chat p:hover time {
-  opacity: 0.5;
+  opacity: 0.75;
 }
 .chat-form {
 }

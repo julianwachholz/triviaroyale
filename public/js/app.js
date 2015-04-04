@@ -1,5 +1,9 @@
 (function (window, document) {
 
+var TIMER_COLOR_START = [76, 175, 80, 0.5],  // #4caf50
+    TIMER_COLOR_END = [244, 67, 54, 0.5];    // #f44336
+
+
 var WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8080',
     ws = new ReconnectingWebSocket(WS_ADDR, null, {
         automaticOpen: false,
@@ -217,8 +221,6 @@ function escapeHTML(text) {
 function animateTimer() {
     var timerBar = document.querySelector('.timer-bar'),
         timerValue = document.querySelector('.timer-value span'),
-        COLOR_START = [0, 255, 0, 0.25],
-        COLOR_END = [255, 0, 0, 0.25],
         timeTotal, timeLeft, timeout = 0.1;
 
     if (timerBar) {
@@ -226,7 +228,7 @@ function animateTimer() {
         timeLeft = parseFloat(timerBar.getAttribute('data-time-left'));
 
         if (!timerBar.classList.contains('colorless')) {
-            timerBar.style.backgroundColor = gradient(COLOR_START, COLOR_END, timeLeft / timeTotal);
+            timerBar.style.backgroundColor = gradient(TIMER_COLOR_START, TIMER_COLOR_END, timeLeft / timeTotal);
         }
         timerBar.style.transition = 'width ' + (timeLeft - timeout) + 's linear, background ' + (timeLeft - 0.1) + 's linear';
 
@@ -242,7 +244,7 @@ function animateTimer() {
         setTimeout(function () {
             timerBar.style.width = '0%';
             if (!timerBar.classList.contains('colorless')) {
-                timerBar.style.backgroundColor = rgba(COLOR_END);
+                timerBar.style.backgroundColor = rgba(TIMER_COLOR_END);
             }
         }, timeout * 1000);
     }
@@ -307,7 +309,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     menu.addEventListener('click', function (event) {
         event.preventDefault();
-        this.classList.toggle('open');
+        aside.classList.toggle('open');
+    });
+
+    menu_close.addEventListener('click', function (event) {
+        event.preventDefault();
         aside.classList.toggle('open');
     });
 
@@ -335,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 window.addEventListener('load', function () {
-    body.classList.remove('loading');
+    body.classList.remove('hidden');
 });
 
 window.addEventListener('keydown', function () {

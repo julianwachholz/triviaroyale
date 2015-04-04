@@ -8,13 +8,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,300,500">
-  <link rel="stylesheet" href="/css/style.css?5">
+  <link rel="stylesheet" href="/css/style.css?v2">
 </head>
-<body id="body" class="loading">
+<body id="body" class="hidden">
   <header class="page-header">
     <h1>Trivia</h1>
-    <a id="menu" href="#aside" title="Open sidebar menu">
-      <h4>Menu</h4>
+    <a id="menu" class="menu-trigger" href="#aside">
       <svg width="100%" height="100%" viewBox="0 0 10 10">
         <path d="M0,1 10,1" stroke="#444" stroke-width="2"/>
         <path d="M0,5 10,5" stroke="#444" stroke-width="2"/>
@@ -32,13 +31,16 @@
     </form>
   </main>
   <aside id="aside">
+      <button id="menu_close" class="menu-trigger">
+        Close Sidebar
+      </button>
     <div class="sidebar">
       <h3>Statistics</h3>
       <dl>
-        <dt>Ping</dt>
-        <dd id="ping">--.--ms</dd>
         <dt>Name</dt>
         <dd id="playername">--</dd>
+        <dt>Ping</dt>
+        <dd id="ping">--.--ms</dd>
       </dl>
     </div>
     <div class="sidebar playerlist">
@@ -55,8 +57,9 @@
     </footer>
   </aside>
 
-  <div id="state" class="hidden"></div>
+  <div id="state" class="state-overlay hidden"></div>
+
   <script src="/reconnecting-websocket.min.js"></script>
-  <script src="/js/app.js?5"></script>
+  <script src="/js/app.js?v2"></script>
 </body>
 </html>

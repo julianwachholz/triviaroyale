@@ -84,8 +84,9 @@ class TriviaGame(object):
                 game += ('<p>{round.question.question}</p><p><b>Time\'s up!</b> '
                          'Nobody got the answer: <b>{answer}</b></p>').format(round=self.round, answer=answer)
 
-            game += ('<p id="question-vote" class="question-vote">Did you like this question? '
-                     '<a href="javascript:vote(1);">Yes</a> / <a href="javascript:vote(-1);">No</a></p>')
+            game += ('<p id="question-vote" class="question-vote">'
+                     '<button class="tiny positive" onclick="vote(1)">Good Question</button>'
+                     '<button class="tiny negative" onclick="vote(-1)">Bad Question</button></p>')
 
             timer = ('<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
                      '<div class="timer-value">Next round in: <span>{time_left}</span>s</div>').format(
