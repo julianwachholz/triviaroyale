@@ -17,6 +17,7 @@ class TriviaGame(object):
 
     """
     STATE_IDLE = 'idle'
+    STATE_STARTING = 'starting'
     STATE_QUESTION = 'question'
     STATE_WAITING = 'waiting'
     STATE_LOCKED = 'locked'
@@ -61,7 +62,9 @@ class TriviaGame(object):
                     '<p class="question">{round.question.question}</p>').format(round=self.round)
 
             if self.hints['current'] is not None:
-                game += '<p class="question-hint">Hint: {}</p>'.format(self.hints['current'])
+                game += '<p class="question-hint">{}</p>'.format(self.hints['current'])
+
+            game += '<p><button class="tiny z2" onclick="command(\'hint\')">Get hint</button></p>'
 
             timer = ('<div class="timer-bar" style="width:{width}%" '
                      'data-total-time="{total_time}" data-time-left="{time_left}"></div>'
@@ -85,8 +88,8 @@ class TriviaGame(object):
                          'Nobody got the answer: <b>{answer}</b></p>').format(round=self.round, answer=answer)
 
             game += ('<p id="question-vote" class="question-vote">'
-                     '<button class="tiny positive" onclick="vote(1)">Good Question</button>'
-                     '<button class="tiny negative" onclick="vote(-1)">Bad Question</button></p>')
+                     '<button class="tiny positive z2" onclick="command(\'vote\', 1)">Good Question</button>'
+                     '<button class="tiny negative z2" onclick="command(\'vote\', -1)">Bad Question</button></p>')
 
             timer = ('<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
                      '<div class="timer-value">Next round in: <span>{time_left}</span>s</div>').format(
@@ -95,7 +98,11 @@ class TriviaGame(object):
             )
 
         elif self.state == self.STATE_IDLE:
-            game = '<p>Trivia is not running.</p><p>Say <kbd>!start</kbd> to begin a new round.</p>'
+            game = ('<p>Trivia is not running.</p>'
+                    '<p><button class="z4" onclick="command(\'start\')">Start new round</button></p>')
+
+        elif self.state == self.STATE_STARTING:
+            game = '<p>New round starting in a few seconds...</p>'
 
         elif self.state == self.STATE_LOCKED:
             game = '<p>Trivia is stopped.</p><p>Only an administrator can start it.</p>'
@@ -134,7 +141,7 @@ class TriviaGame(object):
                     asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
                     asyncio.async(self.round_solved(player))
                 elif self.RE_HINT.search(text):
-                    self.get_hint()
+                    self.get_hint(player)
 
             if self.state == self.STATE_WAITING:
                 if self.RE_NEXT.search(text) and self.has_streak(player) and \
@@ -208,16 +215,24 @@ class TriviaGame(object):
 
     @asyncio.coroutine
     def delay_new_round(self, new_round=False):
-        self.state = self.STATE_WAITING
+        if self.state == self.STATE_STARTING:
+            logger.warn('Preventing multiple simultaneous games!')
+            return
+
         wait = self.WAIT_TIME
 
         if new_round:
+            self.last_action = time.time()
+            self.state = self.STATE_STARTING
             wait = self.WAIT_TIME / 2
             self.round_start = datetime.now()
             self._reset_streak()
             asyncio.async(self.broadcast({
                 'system': "New round starting in {:.2f}s!".format(wait),
             }))
+            self.broadcast_info()
+        else:
+            self.state = self.STATE_WAITING
 
         yield from asyncio.sleep(wait)
 
@@ -304,7 +319,7 @@ class TriviaGame(object):
             'cooldown': 0,
         }
 
-    def get_hint(self):
+    def get_hint(self, from_player=None):
         if self.state != self.STATE_QUESTION or self.hints['count'] >= self.HINT_MAX:
             return
 
@@ -316,6 +331,7 @@ class TriviaGame(object):
             return
 
         if current_max_hints > self.hints['count']:
+            logger.info('HINT REQUEST: {}'.format(from_player))
             self.hints['time'] = now
             self.hints['count'] += 1
             self.hints['current'] = self.round.question.get_hint(self.hints['count'])

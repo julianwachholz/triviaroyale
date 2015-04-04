@@ -1,23 +1,24 @@
 (function (window, document) {
 
 var TIMER_COLOR_START = [76, 175, 80, 0.5],  // #4caf50
-    TIMER_COLOR_END = [244, 67, 54, 0.5];    // #f44336
+    TIMER_COLOR_END = [244, 67, 54, 0.5],    // #f44336
+    PING_FREQ = 5000;
 
 
 var WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8080',
     ws = new ReconnectingWebSocket(WS_ADDR, null, {
         automaticOpen: false,
-        maxReconnectAttempts: 5
+        maxReconnectAttempts: 10
     }),
-    pingTimeout;
+    pingTimeout, modalTimeout;
 
 ws.addEventListener('open', function (event) {
     var playername, password;
 
-    state.innerHTML = '<p>Connected! :)</p>';
+    pagestatus.innerHTML = '<p>Connected! :)</p>';
 
     setTimeout(function () {
-        state.classList.add('hidden');
+        pagestatus.classList.add('hidden');
         ws.send(JSON.stringify({ping: performance.now()}));
     }, 500);
 
@@ -25,29 +26,25 @@ ws.addEventListener('open', function (event) {
     if (playername) {
         password = localStorage.getItem('password');
         if (password) {
-            ws.send(JSON.stringify({
+            command('login', {
                 login: playername,
                 password: password,
                 auto: true
-            }))
+            });
         } else {
-            ws.send(JSON.stringify({login: playername}));
+            command('login', {login: playername});
         }
     } else {
-        window.modal('login');
+        window.showModal('welcome');
     }
 });
 ws.addEventListener('connecting', function (event) {
-    state.innerHTML = '<p>Connecting...</p>';
+    pagestatus.innerHTML = '<p>Connecting...</p>';
 });
 ws.addEventListener('close', function (event) {
-    state.classList.remove('hidden');
-    state.innerHTML = '<p>Connection lost! :(</p>';
+    pagestatus.classList.remove('hidden');
+    pagestatus.innerHTML = '<p>Connection lost! :(</p>';
     clearTimeout(pingTimeout);
-});
-ws.addEventListener('error', function (event) {
-    state.classList.remove('hidden');
-    state.innerHTML = '<p>Something went wrong! :(</p>';
 });
 ws.addEventListener('message', function (message) {
     var data = JSON.parse(message.data);
@@ -69,12 +66,13 @@ function handleMessage(data) {
         chatMessage(data.system, true, null, data.system_extra);
     }
     if (data.prompt) {
-        window.modal(data.prompt, data.data);
+        window.showModal(data.prompt, data.data);
     }
     if (data.setinfo) {
         for (key in data.setinfo) {
             document.getElementById(key).innerHTML = data.setinfo[key];
             if (key === 'playername') {
+                // logged in successfully
                 changename.innerHTML = 'Change name';
                 changepassword.classList.remove('hidden');
                 localStorage.setItem('playername', data.setinfo[key]);
@@ -96,84 +94,93 @@ ws.open();
 function checkLatency(time) {
     var latency;
     if (time) {
-        latency = (performance.now() - time).toFixed(2);
-        ping.innerHTML = latency.toString() + 'ms';
+        latency = (performance.now() - time);
+        ping.innerHTML = latency.toFixed(3 - parseInt(Math.log10(latency))) + 'ms';
     }
     pingTimeout = setTimeout(function () {
         ws.send(JSON.stringify({ping: performance.now()}));
-    }, 5000);
+    }, PING_FREQ);
 }
 
-function modalPrompt(prompt, options, callback) {
-    var wasDisabled = chatinput.disabled;
-    form.removeEventListener('submit', chatHandler);
-    if (options.hasOwnProperty('max')) {
-        chatinput.maxLength = options.max;
-    }
-    chatinput.disabled = false;
-    chatinput.placeholder = prompt;
-    chatinput.focus();
-    chatMessage(prompt, true);
-    form.addEventListener('submit', function modalHandler(event) {
-        var value = chatinput.value;
-        event.preventDefault();
-        if (value || options.hasOwnProperty('allowEmpty') && options.allowEmpty) {
-            chatinput.placeholder = '';
-            chatinput.maxLength = 250;
-            form.removeEventListener('submit', modalHandler);
-            form.addEventListener('submit', chatHandler);
-            if (wasDisabled) {
-                chatinput.disabled = true;
+
+window.showModal = function(modalId, data) {
+    switch (modalId) {
+        case 'welcome':
+            modalcommand.value = 'login';
+            modaltext.innerHTML = '<h2>Welcome to Trivia!</h2><p>Please choose your player name below.</p>';
+            modalinputs.innerHTML = '<div class="form-input"> \
+                    <input type="text" name="login" id="login" maxlength="30" autofocus required> \
+                    <label for="login">Nickname</label></div>';
+            modalcancel.classList.add('hidden');
+            modalsubmit.innerHTML = 'Login';
+            break;
+        case 'login':
+            modalcommand.value = 'login';
+            modaltext.innerHTML = '<h2>Change player name</h2>';
+            modalinputs.innerHTML = '<div class="form-input"> \
+                    <input type="text" name="login" id="login" maxlength="30" required> \
+                    <label for="login">Nickname</label></div>';
+            modalcancel.classList.remove('hidden');
+            modalsubmit.innerHTML = 'Change name';
+            break;
+        case 'password':
+            if (!data.login) {
+                console.warn('Password modal requires a login.');
+                return;
             }
-            callback(value);
-        } else {
-            alert("Please enter a value!");
-        }
-        chatinput.value = '';
-    });
-}
-
-window.modal = function (which, data) {
-    if (which === 'login') {
-        modalPrompt('Please choose your player name!', {max: 40}, function (name) {
-            ws.send(JSON.stringify({login: name}));
-        });
-    }
-    if (which === 'password') {
-        if (!data || !data.login) {
-            console.warn('modal password without login called');
+            modalcommand.value = 'login';
+            if (!!data.auto) {
+                modaltext.innerHTML = '<h2>Password required</h2><p>Enter password for '+escapeHTML(data.login)+':</p>';
+                modalsubmit.innerHTML = 'Login';
+                modalcancel.classList.add('hidden');
+            } else {
+                modaltext.innerHTML = '<h2>Change your password</h2><p>Enter your desired password:</p>';
+                modalsubmit.innerHTML = 'Change password';
+                modalcancel.classList.remove('hidden');
+            }
+            modalinputs.innerHTML = '<div class="form-input"> \
+                    <input type="password" name="password" id="password" '+(!!data.auto ? 'autofocus' : '')+' required> \
+                    <label for="password">Password</label></div> \
+                    <div class="form-checkbox">\
+                        <input type="checkbox" name="rememberme" id="rememberme">\
+                        <label for="rememberme">Save password?</label>\
+                    </div>\
+                    <input type="hidden" name="login" value="'+escapeHTML(data.login)+'">';
+            break;
+        default:
+            console.warn('Unknown modal window.');
             return;
-        }
-        modalPrompt('Enter password for ' + data.login + ':', {}, function (password) {
-            localStorage.setItem('password', password);
-            data.password = password;
-            ws.send(JSON.stringify(data));
-        });
     }
+    if (modalTimeout) {
+        clearTimeout(modalTimeout);
+    }
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
 };
 
-/**
- * rate the previous question if possible.
- */
-window.vote = function (updown) {
-    ws.send(JSON.stringify({command: 'vote', vote: updown}));
-};
+
+function command(command, args) {
+    ws.send(JSON.stringify({
+        command: command, args: args
+    }));
+}
+window.command = command;
+
 
 /**
  * append a chat message
  */
-function chatMessage(text, system, time, extra) {
+function chatMessage(text, system, time, unescaped) {
     var message = document.createElement('p'),
         tstamp = new Date();
     if (system) {
         message.classList.add('system');
         text = '<strong>Trivia:</strong> ' + formatText(escapeHTML(text));
-        if (!!extra) {
-            text +=  ' ' + extra;
+        if (!!unescaped) {
+            text +=  ' ' + unescaped;
         }
     } else {
-        text = escapeHTML(text);
-        text = autolink(text);
+        text = formatText(escapeHTML(text));
         if (!!time) {
             tstamp = new Date(1000 * time);
         }
@@ -200,16 +207,16 @@ function chatHandler(event) {
     }
 }
 
-function autolink(text) {
-    return text.replace(
+function formatText(text) {
+    return text.replace( // *bold* text
+        /\*([^\*]+)\*/g,
+        '<b>$1</b>'
+    ).replace(
+        /_([^_]+)_/ig,
+        '<i>$1</i>'
+    ).replace( // automatic links
         /\b(https?:\/\/[\-A-Z0-9+\u0026\u2019@#\/%?=()~_|!:,.;]*[\-A-Z0-9+\u0026@#\/%=~()_|])\b/ig,
         '<a href="$1" target="_blank">$1</a>'
-    );
-}
-function formatText(text) {
-    return text.replace(
-        /\*([^\*]+)\*/ig,
-        '<b>$1</b>'
     );
 }
 function escapeHTML(text) {
@@ -311,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         aside.classList.toggle('open');
     });
-
     menu_close.addEventListener('click', function (event) {
         event.preventDefault();
         aside.classList.toggle('open');
@@ -319,24 +325,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
     changename.addEventListener('click', function (event) {
         event.preventDefault();
-        menu.classList.toggle('open');
-        aside.classList.toggle('open');
-        modalPrompt('Change your player name!', {allowEmpty: true, max: 40}, function (name) {
-            if (name) {
-                ws.send(JSON.stringify({login: name}));
-            }
-        });
+        window.showModal('login');
     });
     changepassword.addEventListener('click', function (event) {
         var playername;
         event.preventDefault();
-        menu.classList.toggle('open');
-        aside.classList.toggle('open');
+        window.showModal('password', {login: localStorage.getItem('playername')});
+    });
 
-        playername = localStorage.getItem('playername');
-        if (playername) {
-            window.modal('password', {login: playername});
+    modalform.addEventListener('submit', function (event) {
+        var el, args = {};
+        event.preventDefault();
+
+        for (var i = 0; i < modalform.length; i += 1) {
+            el = modalform[i];
+            if (!!el.name && el.name !== 'command') {
+                if (el.type === 'checkbox') {
+                    args[el.name] = !!el.checked;
+                } else {
+                    args[el.name] = el.value;
+                }
+            }
         }
+        console.log(args);
+        if (!!args['rememberme'] && args.rememberme) {
+            console.info("remembering password");
+            localStorage.setItem('password', args['password']);
+        }
+        window.command(modalcommand.value, args);
+
+        modal.classList.remove('show');
+        modalTimeout = setTimeout(function () {
+            modal.classList.add('hidden');
+        }, 200);
+    });
+
+    modalcancel.addEventListener('click', function (event) {
+        event.preventDefault();
+        modal.classList.remove('show');
+        modalTimeout = setTimeout(function () {
+            modal.classList.add('hidden');
+        }, 200);
     });
 });
 
@@ -344,8 +373,10 @@ window.addEventListener('load', function () {
     body.classList.remove('hidden');
 });
 
-window.addEventListener('keydown', function () {
-    chatinput.focus();
+window.addEventListener('keydown', function (event) {
+    if (!event.metaKey && !event.ctrlKey && modal.classList.contains('hidden')) {
+        chatinput.focus();
+    }
 });
 
 })(window, document);

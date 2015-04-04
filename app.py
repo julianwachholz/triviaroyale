@@ -25,10 +25,7 @@ def game_handle(ws, data):
         asyncio.async(send(ws, {'pong': data.get('ping')}))
 
     if 'command' in keys:
-        game.command(ws, data.get('command'), data)
-
-    if 'login' in keys:
-        game.login(ws, data.get('login'), data.get('password', None), data.get('auto', False))
+        game.command(ws, data.get('command'), data.get('args', None))
 
     if 'text' in keys:
         game.chat(ws, data.get('text'))

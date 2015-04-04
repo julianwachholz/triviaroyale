@@ -11,13 +11,13 @@
   <link rel="stylesheet" href="/css/style.css?v2">
 </head>
 <body id="body" class="hidden">
-  <header class="page-header">
+  <header class="page-header z1">
     <h1>Trivia</h1>
     <a id="menu" class="menu-trigger" href="#aside">
       <svg width="100%" height="100%" viewBox="0 0 10 10">
-        <path d="M0,1 10,1" stroke="#444" stroke-width="2"/>
-        <path d="M0,5 10,5" stroke="#444" stroke-width="2"/>
-        <path d="M0,9 10,9" stroke="#444" stroke-width="2"/>
+        <path d="M0,1 10,1" stroke="#444" stroke-width="2" />
+        <path d="M0,5 10,5" stroke="#444" stroke-width="2" />
+        <path d="M0,9 10,9" stroke="#444" stroke-width="2" />
       </svg>
     </a>
   </header>
@@ -26,11 +26,11 @@
     <div id="timer" class="timer"></div>
     <section id="chat" class="chat"></section>
     <form id="form" class="chat-form">
-      <input id="chatinput" type="text" maxlength="250" autocomplete="off" disabled>
+      <input id="chatinput" class="chatinput" type="text" maxlength="250" autocomplete="off" disabled>
       <button type="submit">Chat!</button>
     </form>
   </main>
-  <aside id="aside">
+  <aside id="aside" class="z2">
       <button id="menu_close" class="menu-trigger">
         Close Sidebar
       </button>
@@ -44,20 +44,31 @@
       </dl>
     </div>
     <div class="sidebar playerlist">
-      <h3><span id="playercount">0</span> Players</h3>
-      <ul class="unstyled" id="playerlist">
-      </ul>
+      <h3><span id="playercount">0 Players</span></h3>
+      <ul class="unstyled" id="playerlist"></ul>
     </div>
     <footer class="sidebar">
       <div>
         <h3>Functions</h3>
-        <a href="#change-name" id="changename">Login</a>
-        <a href="#change-password" id="changepassword" class="hidden">Change password</a>
+        <button class="tiny z2" id="changename">Login</button>
+        <button class="tiny z2" id="changepassword" class="hidden">Change password</button>
       </div>
     </footer>
   </aside>
 
-  <div id="state" class="state-overlay hidden"></div>
+  <div id="modal" class="page-overlay page-modal hidden">
+    <div id="modalcontent" class="modal-content z3">
+      <div id="modaltext"></div>
+      <form id="modalform" method="post" action="#">
+        <input type="hidden" name="command" value="" id="modalcommand">
+        <div id="modalinputs"></div>
+        <button type="submit" id="modalsubmit">Submit</button>
+        <button class="flat" id="modalcancel">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="pagestatus" class="page-overlay page-status hidden"></div>
 
   <script src="/reconnecting-websocket.min.js"></script>
   <script src="/js/app.js?v2"></script>

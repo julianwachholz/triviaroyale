@@ -17,6 +17,8 @@ class GameController(object):
     """
     CHAT_SCROLLBACK = 20
 
+    COMMANDS = ['login', 'vote', 'start', 'hint']
+
     def __init__(self):
         self.clients = set()
         self.players = {}
@@ -69,7 +71,7 @@ class GameController(object):
                 'system': "{} is now known as *{}*.".format(old_name, name),
                 'setinfo': self._get_player_info(),
             }))
-            logger.info('GAME RENAME: {} (#{}) was: {}'.format(name, player_id, old_name))
+            logger.info('GAME RENAME: {} to {} (#{})'.format(name, old_name, player_id))
 
     def _rename_player(self, ws, new_name):
         player = self.players[ws]
@@ -91,9 +93,11 @@ class GameController(object):
                     self._set_name(ws, player['id'], new_name, old_name=old_name)
 
     def _get_player_info(self):
-        names = map(lambda player: player['name'], self.players.values())
+        players = sorted(self.players.values(), key=lambda p: p['joined'])
+        names = map(lambda player: player['name'], players)
+        count = len(self.players)
         return {
-            'playercount': len(self.players),
+            'playercount': '{} Player{}'.format(count, 's' if count != 1 else ''),
             'playerlist': '<li>{}</li>'.format('</li><li>'.join(names))
         }
 
@@ -108,54 +112,79 @@ class GameController(object):
         logger.info('GAME PASSWD: {} set new password.'.format(player))
 
     def command(self, ws, command, args):
-        if hasattr(self, command):
-            getattr(self, command)(ws, args)
+        if command in self.COMMANDS and hasattr(self, command):
+            fun = getattr(self, command)
+            if args is None:
+                fun(ws)
+            elif isinstance(args, dict):
+                fun(ws, **args)
+            elif isinstance(args, list):
+                fun(ws, *args)
+            else:
+                fun(ws, args)
+        else:
+            logger.warn('Unknown command: {} with {}'.format(command, args))
 
-    def vote(self, ws, args):
-        value = args.get('vote', 0)
-        if value in (-1, 1):
+    def vote(self, ws, player_vote, *args, **kwargs):
+        if player_vote in (-1, 1):
             try:
                 player_name = self.players[ws]['name']
             except KeyError:
                 return
-            if self.trivia.queue_vote(player_name, value):
+            if self.trivia.queue_vote(player_name, player_vote):
                 asyncio.async(self.send(ws, {'setinfo': {
-                    'question-vote':  '<p class="question-vote">Thank you!</p>',
+                    'question-vote': '<p class="question-vote">Thank you!</p>',
                 }}))
 
+    def start(self, ws, *args, **kwargs):
+        """
+        Start a new round if there is no round running yet.
+
+        """
+        logger.info('START ROUND: {}'.format(self.players[ws]['name']))
+        asyncio.async(self.trivia.delay_new_round(True))
+
+    def hint(self, ws, *args, **kwargs):
+        """
+        Request a new hint if currently possible.
+
+        """
+        self.trivia.get_hint(from_player=self.players[ws]['name'])
+
     @db_session
-    def login(self, ws, name, password=None, auto=False):
-        if len(name) > Player.NAME_MAX_LEN:
+    def login(self, ws, login, password=None, auto=False, *args, **kwargs):
+        if len(login) > Player.NAME_MAX_LEN:
             return
 
         if ws in self.players.keys():
             if password is not None:
                 return self._set_password(ws, password)
-            return self._rename_player(ws, name)
+            return self._rename_player(ws, login)
 
-        player = Player.get(lambda p: p.name == name)
+        player = Player.get(lambda p: p.name == login)
 
         if player is None:
-            player = Player(name=name)
+            player = Player(name=login)
             commit()
         elif not player.check_password(password):
             if password is None or auto:
                 asyncio.async(self.send(ws, {
                     'prompt': 'password',
-                    'data': {'login': name},
+                    'data': {'login': login, 'auto': True},
                 }))
                 return
             else:
                 asyncio.async(self.send(ws, {
                     'system': 'Invalid username/password!',
-                    'system_extra': '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
-                                    'Try again</a>'.format(name),
+                    'system_extra': '<a href="#" onclick="showModal(\'password\', {{login:\'{}\'}})">'
+                                    'Try again</a>'.format(login),
                 }))
                 return
 
         player.logged_in()
 
         self.players[ws] = {
+            'joined': time.time(),
             'id': player.id,
             'name': player.name,
             'permissions': player.permissions,
@@ -165,9 +194,10 @@ class GameController(object):
         if not player.has_password():
             asyncio.async(self.send(ws, {
                 'system': 'You currently have no password!',
-                'system_extra': '<a href="#" onclick="modal(\'password\', {{login:\'{}\'}})">'
+                'system_extra': '<a href="#" onclick="showModal(\'password\', {{login:\'{}\'}})">'
                                 'click here to set a password!</a>'.format(player.name),
             }))
+
         asyncio.async(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
         asyncio.async(self.send(ws, self.chat_scrollback))
 
