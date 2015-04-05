@@ -1,16 +1,17 @@
 (function (window, document) {
+'use strict';
 
 var TIMER_COLOR_START = [76, 175, 80, 0.5],  // #4caf50
     TIMER_COLOR_END = [244, 67, 54, 0.5],    // #f44336
-    PING_FREQ = 5000;
+    PING_FREQ = 5000,
+    WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8080';
 
-
-var WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8080',
-    ws = new ReconnectingWebSocket(WS_ADDR, null, {
+var ws = new ReconnectingWebSocket(WS_ADDR, null, {
         automaticOpen: false,
         maxReconnectAttempts: 10
     }),
-    pingTimeout, modalTimeout;
+    pingTimeout,
+    modalTimeout;
 
 ws.addEventListener('open', function (event) {
     var playername, password;
@@ -60,16 +61,25 @@ function handleMessage(data) {
         checkLatency(data.pong);
     }
     if (data.player && data.text) {
-        chatMessage(data.player + ': ' + data.text, false, data.time);
+        chatMessage({
+            player: data.player,
+            text: data.text,
+            time: data.time
+        });
     }
     if (data.system) {
-        chatMessage(data.system, true, null, data.system_extra);
+        chatMessage({
+            system: true,
+            announce: !!data.announce,
+            text: data.system,
+            unescaped: data.system_extra
+        });
     }
     if (data.prompt) {
         window.showModal(data.prompt, data.data);
     }
     if (data.setinfo) {
-        for (key in data.setinfo) {
+        for (var key in data.setinfo) {
             document.getElementById(key).innerHTML = data.setinfo[key];
             if (key === 'playername') {
                 // logged in successfully
@@ -108,21 +118,23 @@ window.showModal = function(modalId, data) {
         case 'welcome':
             modalcommand.value = 'login';
             modaltext.innerHTML = '<h2>Welcome to Trivia!</h2><p>Please choose your player name below.</p>';
-            modalinputs.innerHTML = '<div class="form-input"> \
-                    <input type="text" name="login" id="login" maxlength="30" autofocus required> \
-                    <label for="login">Nickname</label></div>';
+            modalinputs.innerHTML = '<div class="form-input">' +
+                    '<input type="text" name="login" id="login" maxlength="30" autofocus required>' +
+                    '<label for="login">Nickname</label></div>';
             modalcancel.classList.add('hidden');
             modalsubmit.innerHTML = 'Login';
             break;
+
         case 'login':
             modalcommand.value = 'login';
             modaltext.innerHTML = '<h2>Change player name</h2>';
-            modalinputs.innerHTML = '<div class="form-input"> \
-                    <input type="text" name="login" id="login" maxlength="30" required> \
-                    <label for="login">Nickname</label></div>';
+            modalinputs.innerHTML = '<div class="form-input">' +
+                    '<input type="text" name="login" id="login" maxlength="30" required>' +
+                    '<label for="login">Nickname</label></div>';
             modalcancel.classList.remove('hidden');
             modalsubmit.innerHTML = 'Change name';
             break;
+
         case 'password':
             if (!data.login) {
                 console.warn('Password modal requires a login.');
@@ -138,14 +150,14 @@ window.showModal = function(modalId, data) {
                 modalsubmit.innerHTML = 'Change password';
                 modalcancel.classList.remove('hidden');
             }
-            modalinputs.innerHTML = '<div class="form-input"> \
-                    <input type="password" name="password" id="password" '+(!!data.auto ? 'autofocus' : '')+' required> \
-                    <label for="password">Password</label></div> \
-                    <div class="form-checkbox">\
-                        <input type="checkbox" name="rememberme" id="rememberme">\
-                        <label for="rememberme">Save password?</label>\
-                    </div>\
-                    <input type="hidden" name="login" value="'+escapeHTML(data.login)+'">';
+            modalinputs.innerHTML = '<div class="form-input">' +
+                    '<input type="password" name="password" id="password" '+(!!data.auto ? 'autofocus' : '')+' required>' +
+                    '<label for="password">Password</label></div>' +
+                    '<div class="form-checkbox">' +
+                        '<input type="checkbox" name="rememberme" id="rememberme">' +
+                        '<label for="rememberme">Save password?</label>' +
+                    '</div>' +
+                    '<input type="hidden" name="login" value="'+escapeHTML(data.login)+'">';
             break;
         default:
             console.warn('Unknown modal window.');
@@ -159,9 +171,9 @@ window.showModal = function(modalId, data) {
 };
 
 
-function command(command, args) {
+function command(cmd, args) {
     ws.send(JSON.stringify({
-        command: command, args: args
+        command: cmd, args: args
     }));
 }
 window.command = command;
@@ -170,25 +182,36 @@ window.command = command;
 /**
  * append a chat message
  */
-function chatMessage(text, system, time, unescaped) {
+function chatMessage(opts) {
     var message = document.createElement('p'),
-        tstamp = new Date();
-    if (system) {
+        tstamp = new Date(),
+        text;
+
+    if (opts.system) {
         message.classList.add('system');
-        text = '<strong>Trivia:</strong> ' + formatText(escapeHTML(text));
-        if (!!unescaped) {
-            text +=  ' ' + unescaped;
+        if (opts.announce) {
+            message.classList.add('announce');
+            text = '<hr /><span><em>' + formatText(escapeHTML(opts.text)) + '</em></span>';
+        } else {
+            text = '<strong>Trivia:</strong> ' + formatText(escapeHTML(opts.text));
+            if (!!opts.unescaped) {
+                text +=  ' ' + opts.unescaped;
+            }
         }
     } else {
-        text = formatText(escapeHTML(text));
-        if (!!time) {
-            tstamp = new Date(1000 * time);
+        text = formatText(escapeHTML(opts.player + ': ' + opts.text));
+        if (!!opts.time) {
+            tstamp = new Date(1000 * opts.time);
         }
     }
     message.innerHTML = '<span>' + text + '</span>';
-    message.innerHTML += '<time>' + (tstamp.getHours() < 10 ? '0' : '') + tstamp.getHours() + ':'
-                      + (tstamp.getMinutes() < 10 ? '0' : '') + tstamp.getMinutes() + ':'
-                      + (tstamp.getSeconds() < 10 ? '0' : '') + tstamp.getSeconds() + '</time>';
+
+    if (!opts.announce) {
+        message.innerHTML += '<time>' + (tstamp.getHours() < 10 ? '0' : '') + tstamp.getHours() + ':' +
+                             (tstamp.getMinutes() < 10 ? '0' : '') + tstamp.getMinutes() + ':' +
+                             (tstamp.getSeconds() < 10 ? '0' : '') + tstamp.getSeconds() + '</time>';
+    }
+
     chat.appendChild(message);
 
     if (chat.scrollHeight - chat.scrollTop < 500) {
@@ -196,14 +219,6 @@ function chatMessage(text, system, time, unescaped) {
     }
     if (chat.childElementCount > 100) {
         chat.removeChild(chat.childNodes[0]);
-    }
-}
-
-function chatHandler(event) {
-    event.preventDefault();
-    if (chatinput.value.length > 0) {
-        ws.send(JSON.stringify({text: chatinput.value}));
-        chatinput.value = '';
     }
 }
 
@@ -242,7 +257,7 @@ function animateTimer() {
         (function countdown(timeLeft) {
             if (timeLeft > 0) {
                 timerValue.innerHTML = timeLeft.toFixed(1);
-                setTimeout(function () { countdown(timeLeft - timeout) }, 100);
+                setTimeout(function () { countdown(timeLeft - timeout); }, 100);
             } else {
                 timerValue.innerHTML = '0.0';
             }
@@ -264,8 +279,8 @@ function gradient(from, to, percent) {
         a = to[3] + percent * (from[3] - to[3]);
     return rgba([r,g,b,a]);
 }
-function rgba(rgba) {
-    return 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+','+rgba[3]+')';
+function rgba(val) {
+    return 'rgba('+val[0]+','+val[1]+','+val[2]+','+val[3]+')';
 }
 
 function inputHistory(max_history) {
@@ -311,7 +326,13 @@ function inputHistory(max_history) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    form.addEventListener('submit', chatHandler);
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (chatinput.value.length > 0) {
+            ws.send(JSON.stringify({text: chatinput.value}));
+            chatinput.value = '';
+        }
+    });
     chatinput.addEventListener('keydown', inputHistory());
 
     menu.addEventListener('click', function (event) {
@@ -347,10 +368,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         }
-        console.log(args);
-        if (!!args['rememberme'] && args.rememberme) {
+
+        // Remember password
+        if (!!args.rememberme && args.rememberme) {
             console.info("remembering password");
-            localStorage.setItem('password', args['password']);
+            localStorage.setItem('password', args.password);
         }
         window.command(modalcommand.value, args);
 

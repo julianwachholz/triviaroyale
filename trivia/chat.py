@@ -142,7 +142,7 @@ class GameController(object):
 
         """
         logger.info('START ROUND: {}'.format(self.players[ws]['name']))
-        asyncio.async(self.trivia.delay_new_round(True))
+        self.trivia.timeout = asyncio.async(self.trivia.delay_new_round(True))
 
     def hint(self, ws, *args, **kwargs):
         """

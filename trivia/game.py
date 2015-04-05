@@ -260,6 +260,7 @@ class TriviaGame(object):
         self.timer_start = time.time()
         self._reset_hints()
         self._reset_votes()
+        self.announce('Round #{}'.format(self.round.id))
         self.broadcast_info()
 
     @asyncio.coroutine
@@ -286,6 +287,12 @@ class TriviaGame(object):
     def broadcast_info(self):
         asyncio.async(self.broadcast({
             'setinfo': self.get_round_info(),
+        }))
+
+    def announce(self, message):
+        asyncio.async(self.broadcast({
+            'system': message,
+            'announce': True,
         }))
 
     def _reset_streak(self):

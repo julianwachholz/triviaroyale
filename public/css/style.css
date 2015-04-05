@@ -300,8 +300,28 @@ footer div {
 .chat p:hover time {
   opacity: 0.75;
 }
-.chat-form {
+
+.announce > span {
+  position: relative;
 }
+.announce hr {
+  border: none;
+  border-bottom: 1px solid #b0bec5;
+  margin: .75em 0;
+}
+.announce span span {
+  position: absolute;
+  top: 0;
+  width: 100.5%;
+  text-align: center;
+}
+.announce em {
+  display: inline-block;
+  font-style: normal;
+  padding: 0 1em;
+  background: #eceff1;
+}
+
 .chat-form button {
   display: none;
 }
