@@ -39,9 +39,10 @@ class TriviaGame(object):
 
     RE_ADMIN = re.compile(r'^!a(?:dmin)? (\S+) ?(.*?)$', re.I)
 
-    def __init__(self, broadcast):
+    def __init__(self, broadcast, send):
         self.state = self.STATE_IDLE
         self.broadcast = broadcast
+        self.send = send
         self.queue = asyncio.Queue()
         self.last_action = time.time()
         self.timeout = None
@@ -117,8 +118,8 @@ class TriviaGame(object):
         asyncio.async(self.run_chat())
 
     @asyncio.coroutine
-    def chat(self, player, text):
-        yield from self.queue.put((player, text))
+    def chat(self, ws, player, text):
+        yield from self.queue.put((ws, player, text))
 
     @asyncio.coroutine
     def run_chat(self):
@@ -127,7 +128,7 @@ class TriviaGame(object):
 
         """
         while True:
-            player, text = yield from self.queue.get()
+            ws, player, text = yield from self.queue.get()
             self.last_action = time.time()
 
             if self.RE_ADMIN.search(text) and player['permissions'] > 0:
@@ -139,7 +140,7 @@ class TriviaGame(object):
             if self.state == self.STATE_QUESTION:
                 if self.round.question.check_answer(text):
                     asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
-                    asyncio.async(self.round_solved(player))
+                    asyncio.async(self.round_solved(ws, player))
                 elif self.RE_HINT.search(text):
                     self.get_hint(player)
 
@@ -154,7 +155,7 @@ class TriviaGame(object):
                     logger.info('{}(#{}) started new round'.format(player['name'], player['id']))
 
     @asyncio.coroutine
-    def round_solved(self, player):
+    def round_solved(self, ws, player):
         self.state = self.STATE_WAITING
         if self.streak['player_id'] == player['id']:
             self.streak['count'] += 1
@@ -181,6 +182,8 @@ class TriviaGame(object):
             )
             played_round.end_round()
             self.round = played_round
+
+        asyncio.async(self.send(ws, {'setinfo': player_db.get_recent_scores()}))
 
         asyncio.async(self.round_end())
         logger.info('#{} END: {} for {} points ({} hints used) in {:.2f}s: {}'.format(

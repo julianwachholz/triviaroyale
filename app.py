@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     server = websockets.serve(handler, listen_ip, listen_port, ssl=secure)
 
-    trivia = TriviaGame(broadcast)
+    trivia = TriviaGame(broadcast, send)
     game.trivia = trivia
     game.send = send
     game.broadcast = broadcast

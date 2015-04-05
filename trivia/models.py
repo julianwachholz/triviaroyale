@@ -1,10 +1,10 @@
 import os
 import re
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pony.orm import Database, Required, Optional, Set
-from pony.orm import db_session, sql_debug, commit  # NOQA
+from pony.orm import db_session, sql_debug, commit, get, count  # NOQA
 from passlib.hash import bcrypt_sha256
 
 
@@ -260,6 +260,29 @@ class Player(db.Entity):
         except ValueError:
             return False
         return 1 & self.permissions or perm & self.permissions
+
+    @db_session
+    def get_recent_scores(self):
+        """
+        Get this player's most recent scores.
+
+        """
+        now = datetime.now()
+
+        last_hour = get(
+            (sum(r.points), count(r))
+            for r in Round
+            if r.solver == self and r.start_time > now - timedelta(hours=1)
+        )
+        today = get(
+            (sum(r.points), count(r))
+            for r in Round
+            if r.solver == self and r.start_time.date() == now.date()
+        )
+        return {
+            'points-1h': '{} ({})'.format(*last_hour),
+            'points-day': '{} ({})'.format(*today),
+        }
 
 
 class Round(db.Entity):

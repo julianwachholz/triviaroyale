@@ -198,6 +198,7 @@ class GameController(object):
                                 'click here to set a password!</a>'.format(player.name),
             }))
 
+        asyncio.async(self.send(ws, {'setinfo': player.get_recent_scores()}))
         asyncio.async(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
         asyncio.async(self.send(ws, self.chat_scrollback))
 
@@ -214,4 +215,4 @@ class GameController(object):
         if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
             self.chat_scrollback = self.chat_scrollback[1:]
 
-        asyncio.async(self.trivia.chat(player, text))
+        asyncio.async(self.trivia.chat(ws, player, text))
