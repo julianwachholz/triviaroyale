@@ -66,7 +66,8 @@ class TriviaGame(object):
             if self.hints['current'] is not None:
                 game += '<p class="question-hint">{}</p>'.format(self.hints['current'])
 
-            game += '<p><button class="tiny z2" onclick="command(\'hint\')">Get hint</button></p>'
+            if self.hint_available(ignore_cooldown=True):
+                game += '<p><button class="tiny z2" onclick="command(\'hint\')">Get hint</button></p>'
 
             timer = ('<div class="timer-bar" style="width:{width}%" '
                      'data-total-time="{total_time}" data-time-left="{time_left}"></div>'
@@ -262,7 +263,10 @@ class TriviaGame(object):
                 new_round = Round.new(self.round_start)
             commit()
             self.round = new_round
-        self.timeout = asyncio.async(self.round_timeout())
+        timeout = asyncio.async(self.round_timeout())
+        asyncio.async(self.broadcast_update(timeout))
+
+        self.timeout = timeout
         self.state = self.STATE_QUESTION
         self.timer_start = time.time()
         self._reset_hints()
@@ -290,6 +294,24 @@ class TriviaGame(object):
         self.timer_start = time.time()
         self.broadcast_info()
         self.timeout = asyncio.async(self.delay_new_round())
+
+    @asyncio.coroutine
+    def broadcast_update(self, fut, num=1):
+        """
+        Periodically update the game info to all clients.
+        Mainly used to announce new hint availability.
+
+        :param fut: Current round timeout future.
+
+        """
+        yield from asyncio.sleep(self.HINT_TIMING)
+        if fut.cancelled():
+            return
+
+        self.broadcast_info()
+
+        if num + 1 < self.HINT_MAX:
+            asyncio.async(self.broadcast_update(fut, num + 1))
 
     def broadcast_info(self):
         asyncio.async(self.broadcast({
@@ -333,20 +355,28 @@ class TriviaGame(object):
             'cooldown': 0,
         }
 
-    def get_hint(self, from_player=None):
+    def hint_available(self, ignore_cooldown=False):
         if self.state != self.STATE_QUESTION or self.hints['count'] >= self.HINT_MAX:
-            return
+            return False
 
         now = time.time()
         elapsed_time = now - self.timer_start
         current_max_hints = math.ceil(elapsed_time / self.HINT_TIMING)
 
-        if now - self.hints['time'] < self.HINT_COOLDOWN:
-            return
+        if not ignore_cooldown and now - self.hints['time'] < self.HINT_COOLDOWN:
+            return False
 
         if current_max_hints > self.hints['count']:
+            return True
+        return False
+
+    def get_hint(self, from_player=None):
+        if self.state != self.STATE_QUESTION or self.hints['count'] >= self.HINT_MAX:
+            return
+
+        if self.hint_available():
             logger.info('HINT REQUEST: {}'.format(from_player))
-            self.hints['time'] = now
+            self.hints['time'] = time.time()
             self.hints['count'] += 1
             self.hints['current'] = self.round.question.get_hint(self.hints['count'])
             self.broadcast_info()
