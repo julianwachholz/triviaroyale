@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#009688">
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,300,500">
-  <link rel="stylesheet" href="/css/style.css?v2">
+  <link rel="stylesheet" href="/static/css/style.css?v2">
 </head>
 <body id="body" class="hidden">
   <header class="page-header z1">
@@ -39,24 +39,25 @@
       <h3>Statistics</h3>
       <dl>
         <dt>Name</dt>
-        <dd id="playername"></dd>
+        <dd id="playername">--</dd>
         <dt>Ping</dt>
         <dd id="ping">n/a</dd>
         <dt>Points in last hour</dt>
-        <dd id="points-1h">0 (0)</dd>
+        <dd id="points-1h">-- (--)</dd>
         <dt>Points today</dt>
-        <dd id="points-day">0 (0)</dd>
+        <dd id="points-day">-- (--)</dd>
       </dl>
     </div>
     <div class="sidebar playerlist">
       <h3><span id="playercount">0 Players</span></h3>
       <ul class="unstyled" id="playerlist"></ul>
+      <button class="tiny">Highscores</button>
     </div>
     <footer class="sidebar">
       <div>
         <h3>Functions</h3>
-        <button class="tiny z2" id="changename">Login</button>
-        <button class="tiny z2" id="changepassword" class="hidden">Change password</button>
+        <button class="tiny" id="changename">Login</button>
+        <button class="tiny" id="changepassword" class="hidden">Change password</button>
       </div>
     </footer>
   </aside>
@@ -75,7 +76,10 @@
 
   <div id="pagestatus" class="page-overlay page-status hidden"></div>
 
-  <script src="/reconnecting-websocket.min.js"></script>
-  <script src="/js/app.js?v2"></script>
+  <script>
+  var WS_ADDR = '{{ WS_ADDR }}';
+  </script>
+  <script src="/static/reconnecting-websocket.min.js"></script>
+  <script src="/static/js/app.js?v2"></script>
 </body>
 </html>

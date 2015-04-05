@@ -3,8 +3,7 @@
 
 var TIMER_COLOR_START = [76, 175, 80, 0.5],  // #4caf50
     TIMER_COLOR_END = [244, 67, 54, 0.5],    // #f44336
-    PING_FREQ = 5000,
-    WS_ADDR = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.hostname + ':8080';
+    PING_FREQ = 5000;
 
 var ws = new ReconnectingWebSocket(WS_ADDR, null, {
         automaticOpen: false,
