@@ -11,7 +11,8 @@ var ws = new ReconnectingWebSocket(WS_ADDR, null, {
         maxReconnectAttempts: 10
     }),
     pingTimeout,
-    modalTimeout;
+    modalTimeout,
+    timerTimeout;
 
 ws.addEventListener('open', function (event) {
     var playername, password;
@@ -46,6 +47,7 @@ ws.addEventListener('close', function (event) {
     pagestatus.classList.remove('hidden');
     pagestatus.innerHTML = '<p>Connection lost! :(</p>';
     clearTimeout(pingTimeout);
+    clearTimeout(timerTimeout);
 });
 ws.addEventListener('message', function (message) {
     var data = JSON.parse(message.data);
@@ -243,25 +245,28 @@ function escapeHTML(text) {
 function animateTimer() {
     var timerBar = document.querySelector('.timer-bar'),
         timerValue = document.querySelector('.timer-value span'),
-        timeTotal, timeLeft, timeout = 0.1;
+        timeTotal, timeLeft, timeEnd, timeout = 0.1;
 
     if (timerBar) {
         timeTotal = parseFloat(timerBar.getAttribute('data-total-time'));
         timeLeft = parseFloat(timerBar.getAttribute('data-time-left'));
+        timeEnd = new Date();
+        timeEnd.setMilliseconds(timeEnd.getMilliseconds() + timeLeft * 1000);
 
         if (!timerBar.classList.contains('colorless')) {
             timerBar.style.backgroundColor = gradient(TIMER_COLOR_START, TIMER_COLOR_END, timeLeft / timeTotal);
         }
         timerBar.style.transition = 'width ' + (timeLeft - timeout) + 's linear, background ' + (timeLeft - 0.1) + 's linear';
 
-        (function countdown(timeLeft) {
-            if (timeLeft > 0) {
-                timerValue.innerHTML = timeLeft.toFixed(1);
-                setTimeout(function () { countdown(timeLeft - timeout); }, 100);
+        (function countdown() {
+            var s = (timeEnd - new Date()) / 1000;
+            if (s > 0 && timer.childNodes.length) {
+                timerValue.innerHTML = s.toFixed(1);
+                timerTimeout = setTimeout(countdown, timeout * 1000);
             } else {
                 timerValue.innerHTML = '0.0';
             }
-        }(timeLeft));
+        }());
 
         setTimeout(function () {
             timerBar.style.width = '0%';

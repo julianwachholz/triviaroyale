@@ -24,9 +24,10 @@ class TriviaGame(object):
 
     ROUND_TIME = 45.0
     WAIT_TIME = 10.0
+    WAIT_TIME_NEW_ROUND = 5.0
     WAIT_TIME_MIN = 2.5
     WAIT_TIME_EXTRA = 7.0  # When showing additional info after a round
-    INACTIVITY_TIMEOUT = ROUND_TIME * 4
+    INACTIVITY_TIMEOUT = ROUND_TIME * 3
 
     STREAK_STEPS = 5
     HINT_TIMING = 10.0
@@ -54,7 +55,7 @@ class TriviaGame(object):
         self._reset_votes()
 
     def get_round_info(self):
-        elapsed_time = (time.time() - self.timer_start) if self.round else 0
+        elapsed_time = (time.time() - self.timer_start) if self.timer_start else 0
         timer = ''
 
         if self.state == self.STATE_QUESTION:
@@ -104,6 +105,11 @@ class TriviaGame(object):
 
         elif self.state == self.STATE_STARTING:
             game = '<p>New round starting in a few seconds...</p>'
+            timer = ('<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
+                     '<div class="timer-value">Starting in: <span>{time_left}</span>s</div>').format(
+                width=(self.WAIT_TIME_NEW_ROUND - elapsed_time) / self.WAIT_TIME_NEW_ROUND * 100.0,
+                time_left=self.WAIT_TIME_NEW_ROUND - elapsed_time,
+            )
 
         elif self.state == self.STATE_LOCKED:
             game = '<p>Trivia is stopped.</p><p>Only an administrator can start it.</p>'
@@ -227,12 +233,10 @@ class TriviaGame(object):
         if new_round:
             self.last_action = time.time()
             self.state = self.STATE_STARTING
-            wait = self.WAIT_TIME / 2
+            wait = self.WAIT_TIME_NEW_ROUND
+            self.timer_start = time.time()
             self.round_start = datetime.now()
             self._reset_streak()
-            asyncio.async(self.broadcast({
-                'system': "New round starting in {:.2f}s!".format(wait),
-            }))
             self.broadcast_info()
         else:
             self.state = self.STATE_WAITING
