@@ -115,6 +115,9 @@ function checkLatency(time) {
 
 
 window.showModal = function(modalId, data) {
+    modalform.classList.remove('hidden');
+    modalclose.classList.add('hidden');
+
     switch (modalId) {
         case 'welcome':
             modalcommand.value = 'login';
@@ -160,6 +163,23 @@ window.showModal = function(modalId, data) {
                     '</div>' +
                     '<input type="hidden" name="login" value="'+escapeHTML(data.login)+'">';
             break;
+
+        case 'stats':
+            modalclose.classList.remove('hidden');
+            modalform.classList.add('hidden');
+            modaltext.innerHTML = '<h2>Loading statistics...</h2>' +
+                '<div class="progress"><div class="indeterminate"></div></div>';
+            var url;
+            if (!!data.user) {
+                url = '/stats/' + data.user + '/';
+            } else {
+                url = '/stats/';
+            }
+            ajax(url, function (data) {
+                modaltext.innerHTML = data;
+            });
+            break;
+
         default:
             console.warn('Unknown modal window.');
             return;
@@ -179,6 +199,23 @@ function command(cmd, args) {
 }
 window.command = command;
 
+
+function ajax(url, cb) {
+    var request = new XMLHttpRequest();
+    request.open('GET', url, true);
+
+    request.onload = function() {
+      if (this.status >= 200 && this.status < 400) {
+        cb(this.response);
+      } else {
+        console.error('Got error response from server :(');
+      }
+    };
+    request.onerror = function() {
+        console.error('Something went wrong with this request.');
+    };
+    request.send();
+}
 
 /**
  * append a chat message
@@ -255,7 +292,7 @@ function animateTimer() {
         if (!timerBar.classList.contains('colorless')) {
             timerBar.style.backgroundColor = gradient(TIMER_COLOR_START, TIMER_COLOR_END, timeLeft / timeTotal);
         }
-        timerBar.style.transition = 'width ' + (timeLeft - timeout) + 's linear, background ' + (timeLeft - 0.1) + 's linear';
+        timerBar.style.transition = 'width ' + (timeLeft - timeout) + 's linear, background-color ' + (timeLeft - 0.1) + 's linear';
 
         (function countdown() {
             var s = (timeEnd - new Date()) / 1000;
@@ -385,14 +422,15 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.classList.add('hidden');
         }, 200);
     });
-
-    modalcancel.addEventListener('click', function (event) {
+    var modalCancelFn = function (event) {
         event.preventDefault();
         modal.classList.remove('show');
         modalTimeout = setTimeout(function () {
             modal.classList.add('hidden');
         }, 200);
-    });
+    };
+    modalcancel.addEventListener('click', modalCancelFn);
+    modalclose.addEventListener('click', modalCancelFn);
 });
 
 window.addEventListener('load', function () {

@@ -1,3 +1,8 @@
+/**
+ * trivia.ju.io stylesheet
+ *
+ * some parts taken from http://materializecss.com/
+ */
 html {
   box-sizing: border-box;
 }
@@ -37,12 +42,15 @@ body {
   display: none;
 }
 
-h1, h2, h3, h4 {
+h1, h2, h3, h4, summary {
   font-weight: 300;
   line-height: 1;
 }
 h2, h3, h4 {
   margin-bottom: 0.25em;
+}
+summary {
+  font-size: 1.2em;
 }
 
 .page-header {
@@ -151,6 +159,9 @@ button.negative:hover, .button.negative:hover {
   background: #e53935;
 }
 
+dl, ul.unstyled {
+  margin-bottom: .5rem;
+}
 dl dt {
   float: left;
   width: 50%;
@@ -259,7 +270,7 @@ footer div {
 .timer {
   font: normal 500 16px/1.5 "Roboto", sans-serif;
   position: relative;
-  background: rgba(236, 239, 241, 1); /* eceff1 */
+  background-color: rgba(236, 239, 241, 1); /* eceff1 */
   height: 1.3em;
   box-shadow: 0 10px 25px #eceff1;
 }
@@ -270,9 +281,13 @@ footer div {
 .timer-value {
   width: 100%;
   text-align: center;
+  will-change: width;
+}
+.timer-bar {
+  will-change: background-color;
 }
 .timer-bar.colorless {
-  background: rgba(0, 0, 0, .1);
+  background-color: rgba(0, 0, 0, .1);
 }
 
 .chat {
@@ -387,6 +402,7 @@ input[type=number] {
   opacity: 1.0;
 }
 .modal-content {
+  position: relative;
   background: #fafafa;
   padding: 1.5rem;
   max-height: 80%;
@@ -398,6 +414,44 @@ input[type=number] {
 .modal-content .form-input {
   margin: 1rem 0;
 }
+
+.modal-close {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  height: 36px;
+  width: 38px;
+  padding: 0;
+  text-align: center;
+  font: normal 500 28px/36px 'Roboto', sans-serif;
+}
+
+/* statistics */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: .15rem .3rem;
+}
+th {
+  text-align: left;
+  font-weight: 400;
+}
+.numbers thead th, .numbers td {
+  text-align: right;
+}
+tbody tr:nth-child(odd) {
+  background: #eceff1;
+}
+tbody tr:hover {
+  background: #cfd8dc;
+}
+.numbers td {
+  font-weight: 300;
+  width: 15%;
+}
+
 
 .form-checkbox {
   margin-bottom: 10px;
@@ -450,6 +504,77 @@ input[type="checkbox"]:checked + label:before {
   transform: rotate(40deg);
   transform-origin: 100% 100%;
   -webkit-backface-visibility: hidden;
+}
+
+h2 + .progress {
+  margin-top: 2rem;
+}
+
+.progress {
+  position: relative;
+  height: 4px;
+  display: block;
+  width: 100%;
+  background-color: #acece6;  /* teal lighten-1 40% */
+  border-radius: 2px;
+  margin: .5rem 0 .5rem 0;
+  overflow: hidden;
+}
+.progress .indeterminate {
+  background-color: #26a69a;
+}
+.progress .indeterminate:before {
+  content: '';
+  position: absolute;
+  background-color: inherit;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  will-change: left, right;
+  -webkit-animation: indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+  animation: indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+}
+.progress .indeterminate:after {
+  content: '';
+  position: absolute;
+  background-color: inherit;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  will-change: left, right;
+  -webkit-animation: indeterminate-short 2.1s cubic-bezier(0.165, 0.840, 0.440, 1.000) infinite;
+  animation: indeterminate-short 2.1s cubic-bezier(0.165, 0.840, 0.440, 1.000) infinite;
+  -webkit-animation-delay: 1.15s;
+  animation-delay: 1.15s;
+}
+
+@-webkit-keyframes indeterminate {
+  0% {
+    left: -35%;
+    right:100%;
+  }
+  60% {
+    left: 100%;
+    right: -90%;
+  }
+  100% {
+    left: 100%;
+    right: -90%;
+  }
+}
+@-webkit-keyframes indeterminate-short {
+  0% {
+    left: -200%;
+    right: 100%;
+  }
+  60% {
+    left: 107%;
+    right: -8%;
+  }
+  100% {
+    left: 107%;
+    right: -8%;
+  }
 }
 
 

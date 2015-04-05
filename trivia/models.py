@@ -4,7 +4,7 @@ import math
 from datetime import datetime, timedelta
 
 from pony.orm import Database, Required, Optional, Set
-from pony.orm import db_session, sql_debug, commit, get, count  # NOQA
+from pony.orm import db_session, sql_debug, commit, select, get, count  # NOQA
 from passlib.hash import bcrypt_sha256
 
 
@@ -262,6 +262,33 @@ class Player(db.Entity):
         return 1 & self.permissions or perm & self.permissions
 
     @db_session
+    def get_stats(self, dt=None):
+        if dt is None:
+            dt = datetime.now().date()
+
+        week = (dt - timedelta(days=dt.weekday()), dt + timedelta(days=6 - dt.weekday()))
+
+        return get((
+            # This day
+            count(r.solver == self and r.start_time.date() == dt),
+            sum(r.points for r in Round if r.solver == self and r.start_time.date() == dt),
+
+            # This week
+            count(r.solver == self and r.start_time >= week[0] and r.start_time <= week[1]),
+            sum(r.points for r in Round if r.solver == self and r.start_time > week[0] and r.start_time < week[1]),
+
+            # This month
+            count(r.solver == self and
+                  r.start_time.year == dt.year and r.start_time.month == dt.month),
+            sum(r.points for r in Round if r.solver == self and
+                r.start_time.year == dt.year and r.start_time.month == dt.month),
+
+            # All time
+            count(r.solver == self),
+            sum(r.points for r in Round if r.solver == self),
+        ) for r in Round)
+
+    @db_session
     def get_recent_scores(self):
         """
         Get this player's most recent scores.
@@ -269,19 +296,19 @@ class Player(db.Entity):
         """
         now = datetime.now()
 
-        last_hour = get(
-            (sum(r.points), count(r))
-            for r in Round
-            if r.solver == self and r.start_time > now - timedelta(hours=1)
-        )
-        today = get(
-            (sum(r.points), count(r))
-            for r in Round
-            if r.solver == self and r.start_time.date() == now.date()
-        )
+        stats = get((
+            # Last 60 minutes
+            sum(r.points for r in Round if r.solver == self and r.start_time > now - timedelta(hours=1)),
+            count(r.solver == self and r.start_time > now - timedelta(hours=1)),
+
+            # This day
+            sum(r.points for r in Round if r.solver == self and r.start_time.date() == now.date()),
+            count(r.solver == self and r.start_time.date() == now.date()),
+        ) for r in Round)
+
         return {
-            'points-1h': '{} ({})'.format(*last_hour),
-            'points-day': '{} ({})'.format(*today),
+            'points-1h': '{} ({})'.format(stats[0], stats[1]),
+            'points-day': '{} ({})'.format(stats[2], stats[3]),
         }
 
 
