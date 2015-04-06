@@ -9,6 +9,7 @@ var ws = new ReconnectingWebSocket(WS_ADDR, null, {
         automaticOpen: false,
         maxReconnectAttempts: 10
     }),
+    playerList = [],
     pingTimeout,
     modalTimeout,
     timerTimeout;
@@ -81,7 +82,13 @@ function handleMessage(data) {
     }
     if (data.setinfo) {
         for (var key in data.setinfo) {
+            if (key === 'players') {
+                updatePlayers(data.setinfo[key]);
+                continue;
+            }
+
             document.getElementById(key).innerHTML = data.setinfo[key];
+
             if (key === 'playername') {
                 // logged in successfully
                 changename.innerHTML = 'Change name';
@@ -113,6 +120,14 @@ function checkLatency(time) {
     }, PING_FREQ);
 }
 
+function updatePlayers(players) {
+    var html = '', i;
+    for (i = 0; i < players.length; i += 1) {
+        html += '<li><a onclick="showModal(\'ajax\', \'/stats/user/?name=' + players[i] + '\')">' + players[i] + '</a></li>';
+    }
+    playerlist.innerHTML = html;
+    playerList = players;
+}
 
 window.showModal = function(modalId, data) {
     modalform.classList.remove('hidden');
@@ -164,19 +179,13 @@ window.showModal = function(modalId, data) {
                     '<input type="hidden" name="login" value="'+escapeHTML(data.login)+'">';
             break;
 
-        case 'stats':
+        case 'ajax':
             modalclose.classList.remove('hidden');
             modalform.classList.add('hidden');
-            modaltext.innerHTML = '<h2>Loading statistics...</h2>' +
+            modaltext.innerHTML = '<h2>Loading...</h2>' +
                 '<div class="progress"><div class="indeterminate"></div></div>';
-            var url;
-            if (!!data.user) {
-                url = '/stats/' + data.user + '/';
-            } else {
-                url = '/stats/';
-            }
-            ajax(url, function (data) {
-                modaltext.innerHTML = data;
+            ajax(data, null, function (result) {
+                modaltext.innerHTML = result;
             });
             break;
 
@@ -191,6 +200,17 @@ window.showModal = function(modalId, data) {
     modal.classList.add('show');
 };
 
+window.ajaxForm = function (event, form) {
+    event.preventDefault();
+
+    modaltext.innerHTML = '<h2>Loading...</h2>' +
+        '<div class="progress"><div class="indeterminate"></div></div>';
+
+    ajax(form.action, new FormData(form), function (result) {
+        modaltext.innerHTML = result;
+    });
+};
+
 
 function command(cmd, args) {
     ws.send(JSON.stringify({
@@ -200,9 +220,9 @@ function command(cmd, args) {
 window.command = command;
 
 
-function ajax(url, cb) {
+function ajax(url, data, cb) {
     var request = new XMLHttpRequest();
-    request.open('GET', url, true);
+    request.open(!!data ? 'POST' : 'GET', url, true);
 
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
@@ -214,7 +234,12 @@ function ajax(url, cb) {
     request.onerror = function() {
         console.error('Something went wrong with this request.');
     };
-    request.send();
+
+    if (!!data) {
+        request.send(data);
+    } else {
+        request.send();
+    }
 }
 
 /**

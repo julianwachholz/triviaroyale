@@ -66,6 +66,7 @@ summary {
 }
 
 a {
+  cursor: pointer;
   color: inherit;
   text-decoration: none;
   border-bottom: 1px solid rgba(0,0,0,0.25);
@@ -354,6 +355,9 @@ input[type=number] {
   width: 100%;
 }
 
+.error {
+  color: #f44336;
+}
 .form-input {
   position: relative;
   margin-top: 1rem;
@@ -430,6 +434,7 @@ input[type=number] {
 table {
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 1rem;
 }
 th, td {
   padding: .15rem .3rem;

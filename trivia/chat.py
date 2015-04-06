@@ -94,11 +94,10 @@ class GameController(object):
 
     def _get_player_info(self):
         players = sorted(self.players.values(), key=lambda p: p['joined'])
-        names = map(lambda player: player['name'], players)
         count = len(self.players)
         return {
             'playercount': '{} Player{}'.format(count, 's' if count != 1 else ''),
-            'playerlist': '<li>{}</li>'.format('</li><li>'.join(names))
+            'players': list(map(lambda player: player['name'], players)),
         }
 
     @db_session

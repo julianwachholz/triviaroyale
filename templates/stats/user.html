@@ -1,35 +1,37 @@
 <h2>Statistics for {{ player.name }}</h2>
 <dl>
-    <dt>Playing since</dt>
-    <dd>{{ player.date_joined.strftime('%A, %B %d %Y') }}</dd>
-    <dt>Last login</dt>
-    <dd>{{ player.last_played|timesince }} ago</dd>
+  <dt>Playing since</dt>
+  <dd>{{ player.date_joined.strftime('%A, %B %d %Y') }}</dd>
+  <dt>Last login</dt>
+  <dd>{{ player.last_played|timesince }} ago</dd>
 </dl>
 <table class="numbers">
-    <summary>Trivia Statistics</summary>
-    <thead>
-        <tr>
-            <td></td>
-            <th scope="col">Today</th>
-            <th scope="col">This week</th>
-            <th scope="col">This month</th>
-            <th scope="col">All time</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <th scope="row">Answered</th>
-            <td>{{ stats.0|format_number }}</td>
-            <td>{{ stats.2|format_number }}</td>
-            <td>{{ stats.4|format_number }}</td>
-            <td>{{ stats.6|format_number }}</td>
-        </tr>
-        <tr>
-            <th scope="row">Points</th>
-            <td>{{ stats.1|format_number }}</td>
-            <td>{{ stats.3|format_number }}</td>
-            <td>{{ stats.5|format_number }}</td>
-            <td>{{ stats.7|format_number }}</td>
-        </tr>
-    </tbody>
+  <summary>Trivia Statistics</summary>
+  <thead>
+    <tr>
+      <td></td>
+      <th scope="col">Today</th>
+      <th scope="col">This week</th>
+      <th scope="col">This month</th>
+      <th scope="col">All time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Answered</th>
+      <td>{{ stats.0|format_number }}</td>
+      <td>{{ stats.2|format_number }}</td>
+      <td>{{ stats.4|format_number }}</td>
+      <td>{{ stats.6|format_number }}</td>
+    </tr>
+    <tr>
+      <th scope="row">Points</th>
+      <td>{{ stats.1|format_number }}</td>
+      <td>{{ stats.3|format_number }}</td>
+      <td>{{ stats.5|format_number }}</td>
+      <td>{{ stats.7|format_number }}</td>
+    </tr>
+  </tbody>
 </table>
+
+<button class="tiny" onclick="showModal('ajax', '/stats/search/');">Search user</button>

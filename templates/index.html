@@ -47,7 +47,9 @@
         <dt>Points today</dt>
         <dd id="points-day">-- (--)</dd>
       </dl>
-      <button class="tiny" onclick="showModal('stats', {user: localStorage.getItem('playername')})">More Statistics</button>
+      <button class="tiny" onclick="showModal('ajax', '/stats/user/?name=' + localStorage.getItem('playername'))">
+        More Statistics
+      </button>
     </div>
     <div class="sidebar playerlist">
       <h3><span id="playercount">0 Players</span></h3>
