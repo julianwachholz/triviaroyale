@@ -443,7 +443,7 @@ th {
   text-align: left;
   font-weight: 400;
 }
-.numbers thead th, .numbers td {
+.numbers, .numbers thead th, .numbers td {
   text-align: right;
 }
 tbody tr:nth-child(odd) {
@@ -452,8 +452,10 @@ tbody tr:nth-child(odd) {
 tbody tr:hover {
   background: #cfd8dc;
 }
-.numbers td {
+td.numbers, .numbers td {
   font-weight: 300;
+}
+.numbers td {
   width: 15%;
 }
 

@@ -186,6 +186,8 @@ window.showModal = function(modalId, data) {
                 '<div class="progress"><div class="indeterminate"></div></div>';
             ajax(data, null, function (result) {
                 modaltext.innerHTML = result;
+            }, function (error) {
+                modaltext.innerHTML = '<h2 class="error">Error</h2><p class="error">' + error + '</p>';
             });
             break;
 
@@ -208,6 +210,8 @@ window.ajaxForm = function (event, form) {
 
     ajax(form.action, new FormData(form), function (result) {
         modaltext.innerHTML = result;
+    }, function (error) {
+        modaltext.innerHTML = '<h2 class="error">Error</h2><p class="error">' + error + '</p>';
     });
 };
 
@@ -220,7 +224,7 @@ function command(cmd, args) {
 window.command = command;
 
 
-function ajax(url, data, cb) {
+function ajax(url, data, cb, errcb) {
     var request = new XMLHttpRequest();
     request.open(!!data ? 'POST' : 'GET', url, true);
 
@@ -228,11 +232,11 @@ function ajax(url, data, cb) {
       if (this.status >= 200 && this.status < 400) {
         cb(this.response);
       } else {
-        console.error('Got error response from server :(');
+        errcb('HTTP Status ' + this.status);
       }
     };
     request.onerror = function() {
-        console.error('Something went wrong with this request.');
+        errcb('Something went wrong with this request.');
     };
 
     if (!!data) {

@@ -1,0 +1,25 @@
+<h2>Highscores</h2>
+
+<table>
+  <summary>{{ period }}</summary>
+  <thead>
+    <tr>
+      <td></td>
+      <th scope="col">Name</th>
+      <th scope="col" class="numbers">Points</th>
+      <th scope="col" class="numbers">Rounds won</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for id, name, points, rounds in highscores %}
+    <tr>
+      <th scope="row">{{ loop.index }}.</th>
+      <td>
+        <a onclick="showModal('ajax', '{{ url_for('stats_user') }}?name={{ name|urlencode }}')">{{ name }}</a>
+      </td>
+      <td class="numbers">{{ points|format_number }}</td>
+      <td class="numbers">{{ rounds|format_number }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

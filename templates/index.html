@@ -47,14 +47,14 @@
         <dt>Points today</dt>
         <dd id="points-day">-- (--)</dd>
       </dl>
-      <button class="tiny" onclick="showModal('ajax', '/stats/user/?name=' + localStorage.getItem('playername'))">
+      <button class="tiny" onclick="showModal('ajax', '{{ url_for('stats_user') }}?name=' + localStorage.getItem('playername'))">
         More Statistics
       </button>
     </div>
     <div class="sidebar playerlist">
       <h3><span id="playercount">0 Players</span></h3>
       <ul class="unstyled" id="playerlist"></ul>
-      <!-- <button class="tiny" onclick="showModal('stats')">Highscores</button> -->
+      <button class="tiny" onclick="showModal('ajax', '{{ url_for('highscores') }}')">Highscores</button>
     </div>
     <footer class="sidebar">
       <div>

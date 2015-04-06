@@ -3,7 +3,7 @@
 import os
 
 from flask import Flask, request, render_template
-from pony.orm import db_session
+from pony.orm import db_session, select, count
 from trivia.models import db, Player
 from trivia.helpers import timesince, format_number
 
@@ -48,6 +48,20 @@ def stats_user():
 
     stats = player.get_stats()
     return render_template('stats/user.html', player=player, stats=stats)
+
+
+@app.route('/highscores/')
+@db_session
+def highscores():
+    period = 'All time'
+
+    highscores = select(
+        (p.id, p.name, sum(r.points for r in p.rounds_solved), count(p.rounds_solved))
+        for p in Player
+        if len(p.rounds_solved) > 0
+    ).order_by(-3)
+
+    return render_template('stats/highscores.html', period=period, highscores=highscores[:10])
 
 
 db.bind('postgres', database='trivia')
