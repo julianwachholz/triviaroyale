@@ -12,9 +12,13 @@ from trivia.game import TriviaGame
 from trivia.models import db
 
 
-logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)-7s %(module)+7s: %(message)s', level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 game = GameController()
+
+MAX_MSG_SIZE = 2 ** 10  # 1kb
 
 
 @asyncio.coroutine
@@ -39,7 +43,14 @@ def handler(ws, path):
         if message is None:
             game.leave(ws)
             break
-        data = json.loads(message)
+        if len(message) > MAX_MSG_SIZE:
+            logger.warn("Discarding message: Too long: {}".format(len(message)))
+            continue
+        try:
+            data = json.loads(message)
+        except ValueError:
+            logger.warn("Discarding message: Invalid format: {}".format(message[:100]))
+            continue
         asyncio.async(game_handle(ws, data))
 
         if 'ping' not in data:

@@ -15,7 +15,7 @@ class GameController(object):
     Login/passwords and chat interaction goes through this.
 
     """
-    CHAT_SCROLLBACK = 20
+    CHAT_SCROLLBACK = 30
 
     COMMANDS = ['login', 'vote', 'start', 'hint']
 
@@ -52,7 +52,7 @@ class GameController(object):
                     'system': "{} left.".format(player['name']),
                     'setinfo': self._get_player_info(),
                 }))
-                logger.info('GAME LEAVE: {} (#{})'.format(player['name'], player['id']))
+                logger.info('Leave: {} (#{})'.format(player['name'], player['id']))
             self.clients.remove(ws)
 
     def _set_name(self, ws, player_id, name, old_name=None):
@@ -65,13 +65,13 @@ class GameController(object):
                 'system': "{} joined.".format(name),
                 'setinfo': self._get_player_info(),
             }))
-            logger.info('GAME JOIN: {} (#{})'.format(name, player_id))
+            logger.info('Join: {} (#{})'.format(name, player_id))
         else:
             asyncio.async(self.broadcast({
                 'system': "{} is now known as *{}*.".format(old_name, name),
                 'setinfo': self._get_player_info(),
             }))
-            logger.info('GAME RENAME: {} to {} (#{})'.format(name, old_name, player_id))
+            logger.info('Rename: {} to {} (#{})'.format(name, old_name, player_id))
 
     def _rename_player(self, ws, new_name):
         player = self.players[ws]
@@ -109,7 +109,7 @@ class GameController(object):
         asyncio.async(self.send(ws, {
             'system': 'Password successfully changed!',
         }))
-        logger.info('GAME PASSWD: {} set new password.'.format(player))
+        logger.info('Password: {} set new password.'.format(player))
 
     def command(self, ws, command, args):
         if command in self.COMMANDS and hasattr(self, command):
@@ -123,7 +123,7 @@ class GameController(object):
             else:
                 fun(ws, args)
         else:
-            logger.warn('Unknown command: {} with {}'.format(command, args))
+            logger.warn('Unknown command from {}: {} with {}'.format(self.players[ws]['name'], command, args))
 
     def vote(self, ws, player_vote, *args, **kwargs):
         if player_vote in (-1, 1):
@@ -141,7 +141,7 @@ class GameController(object):
         Start a new round if there is no round running yet.
 
         """
-        logger.info('START ROUND: {}'.format(self.players[ws]['name']))
+        logger.info('Start: {}'.format(self.players[ws]['name']))
         self.trivia.timeout = asyncio.async(self.trivia.delay_new_round(True))
 
     def hint(self, ws, *args, **kwargs):
@@ -215,4 +215,5 @@ class GameController(object):
         if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
             self.chat_scrollback = self.chat_scrollback[1:]
 
+        logger.info('Chat: {}: {}'.format(player['name'], text))
         asyncio.async(self.trivia.chat(ws, player, text))
