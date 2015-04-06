@@ -3,6 +3,8 @@ import locale
 
 
 def format_number(num, decimal_places=0):
+    if not isinstance(num, (int, float)):
+        return 'n/a'
     locale.setlocale(locale.LC_ALL, 'en_US.UTF8')
     if decimal_places > 0 and isinstance(num, float):
         return locale.format('%.{}f'.format(decimal_places), num, grouping=True)
