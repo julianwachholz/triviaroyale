@@ -2,8 +2,10 @@ import datetime
 import locale
 
 
-def format_number(num):
+def format_number(num, decimal_places=0):
     locale.setlocale(locale.LC_ALL, 'en_US.UTF8')
+    if decimal_places > 0 and isinstance(num, float):
+        return locale.format('%.{}f'.format(decimal_places), num, grouping=True)
     return locale.format('%d', num, grouping=True)
 
 

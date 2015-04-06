@@ -1,10 +1,11 @@
 import os
 import re
 import math
+from collections import OrderedDict
 from datetime import datetime, timedelta
 
 from pony.orm import Database, Required, Optional, Set
-from pony.orm import db_session, sql_debug, commit, select, get, count  # NOQA
+from pony.orm import db_session, sql_debug, commit, select, get, count, avg  # NOQA
 from passlib.hash import bcrypt_sha256
 
 
@@ -114,6 +115,7 @@ class Question(db.Entity):
         consonants = consonants_fn(word_len)
 
         if vowels:
+            # skip double vowels
             r = re.compile(r'(?:\b|[^aeiou])([aeiou])', re.I)
             for i, match in enumerate(r.finditer(word)):
                 masked_word[match.end() - 1] = match.group(1)
@@ -266,27 +268,35 @@ class Player(db.Entity):
         if dt is None:
             dt = datetime.now().date()
 
-        week = (dt - timedelta(days=dt.weekday()), dt + timedelta(days=6 - dt.weekday()))
+        dt_week = dt - timedelta(days=dt.weekday()), dt + timedelta(days=6 - dt.weekday())
+        dt_month = dt.replace(day=1)
 
-        return get((
-            # This day
-            count(r.solver == self and r.start_time.date() == dt),
-            sum(r.points for r in Round if r.solver == self and r.start_time.date() == dt),
+        all_time = get(
+            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
+            for r in Round if r.solver == self
+        )
+        day = get(
+            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
+            for r in Round if r.solver == self
+            and r.start_time.date() == dt
+        )
+        week = get(
+            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
+            for r in Round if r.solver == self
+            and r.start_time >= dt_week[0] and r.start_time <= dt_week[1]
+        )
+        month = get(
+            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
+            for r in Round if r.solver == self
+            and r.start_time.year == dt.year and r.start_time.month == dt.month
+        )
 
-            # This week
-            count(r.solver == self and r.start_time >= week[0] and r.start_time <= week[1]),
-            sum(r.points for r in Round if r.solver == self and r.start_time > week[0] and r.start_time < week[1]),
-
-            # This month
-            count(r.solver == self and
-                  r.start_time.year == dt.year and r.start_time.month == dt.month),
-            sum(r.points for r in Round if r.solver == self and
-                r.start_time.year == dt.year and r.start_time.month == dt.month),
-
-            # All time
-            count(r.solver == self),
-            sum(r.points for r in Round if r.solver == self),
-        ) for r in Round)
+        return OrderedDict([
+            (dt, day),
+            (dt_week, week),
+            (dt_month, month),
+            (None, all_time),
+        ])
 
     @db_session
     def get_recent_scores(self):

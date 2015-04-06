@@ -47,7 +47,18 @@ def stats_user():
         return stats_search(error='Player not found.', name=player_name)
 
     stats = player.get_stats()
-    return render_template('stats/user.html', player=player, stats=stats)
+
+    dates = list(stats.keys())
+    values = list(zip(*stats.values()))
+    legends = [
+        'Rounds won',
+        'Points',
+        'Average Points',
+        'Max. Points',
+        'Average Time',
+        'Fastest Answer',
+    ]
+    return render_template('stats/user.html', player=player, dates=dates, legends=legends, values=values)
 
 
 @app.route('/highscores/')

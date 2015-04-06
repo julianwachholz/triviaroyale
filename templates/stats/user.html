@@ -10,27 +10,28 @@
   <thead>
     <tr>
       <td></td>
-      <th scope="col">Today</th>
-      <th scope="col">This week</th>
-      <th scope="col">This month</th>
+      <th scope="col">{{ dates.0.strftime('%B %d, %Y') }}</th>
+      <th scope="col">
+        <abbr title="From {{ dates.1.0 }} to {{ dates.1.1 }}">
+          Week {{ dates.1.0.isocalendar().1 }} {{ dates.1.0.year }}
+        </abbr>
+      </th>
+      <th scope="col">{{ dates.2.strftime('%B %Y') }}</th>
       <th scope="col">All time</th>
     </tr>
   </thead>
   <tbody>
+  {% for row in values %}
+    {% set outer_loop = loop %}
     <tr>
-      <th scope="row">Answered</th>
-      <td>{{ stats.0|format_number }}</td>
-      <td>{{ stats.2|format_number }}</td>
-      <td>{{ stats.4|format_number }}</td>
-      <td>{{ stats.6|format_number }}</td>
+      <th scope="row">{{ legends[loop.index0] }}</th>
+      {% for num in row %}
+        <td>
+          {{ num|format_number(2) }}{% if outer_loop.index0 > 3 %}<small>s</small>{% endif %}
+        </td>
+      {% endfor %}
     </tr>
-    <tr>
-      <th scope="row">Points</th>
-      <td>{{ stats.1|format_number }}</td>
-      <td>{{ stats.3|format_number }}</td>
-      <td>{{ stats.5|format_number }}</td>
-      <td>{{ stats.7|format_number }}</td>
-    </tr>
+  {% endfor %}
   </tbody>
 </table>
 
