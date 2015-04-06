@@ -3,7 +3,9 @@
 import os
 
 from flask import Flask, request, render_template
+from raven.contrib.flask import Sentry
 from pony.orm import db_session, select, count
+
 from trivia.models import db, Player
 from trivia.helpers import timesince, format_number
 
@@ -11,6 +13,10 @@ from trivia.helpers import timesince, format_number
 app = Flask(__name__)
 app.jinja_env.filters['timesince'] = timesince
 app.jinja_env.filters['format_number'] = format_number
+
+if 'SENTRY_DSN' in os.environ:
+    app.config['SENTRY_DSN'] = os.environ.get('SENTRY_DSN')
+    sentry = Sentry(app)
 
 WS_ADDR = os.environ.get('WS_ADDR', 'ws://localhost:8080')
 

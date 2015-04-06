@@ -5,3 +5,5 @@ pony
 psycopg2
 passlib
 py-bcrypt
+blinker
+raven
