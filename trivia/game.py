@@ -337,7 +337,8 @@ class TriviaGame(object):
         streak = self.streak['count']
         if broken:
             info = "{} broke {}'s streak of *{}*!".format(player_name, self.streak['player_name'], streak)
-            logger.info('#{} STREAK BREAK: {} broke {} ({})'.format(player_name, self.streak['player_name'], streak))
+            logger.info('#{} STREAK BREAK: {} broke {} ({})'.format(
+                self.round.id, player_name, self.streak['player_name'], streak))
         else:
             info = "{} has reached a streak of *{}*!".format(player_name, streak)
             logger.info('#{} STREAK: {} has {}'.format(self.round.id, player_name, streak))
