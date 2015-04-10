@@ -271,25 +271,15 @@ class Player(db.Entity):
         dt_week = dt - timedelta(days=dt.weekday()), dt + timedelta(days=6 - dt.weekday())
         dt_month = dt.replace(day=1)
 
-        all_time = get(
-            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
-            for r in Round if r.solver == self
-        )
-        day = get(
-            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
-            for r in Round if r.solver == self
-            and r.start_time.date() == dt
-        )
-        week = get(
-            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
-            for r in Round if r.solver == self
-            and r.start_time >= dt_week[0] and r.start_time <= dt_week[1]
-        )
-        month = get(
-            (count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
-            for r in Round if r.solver == self
-            and r.start_time.year == dt.year and r.start_time.month == dt.month
-        )
+        q = select((count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
+                   for r in Round if r.solver == self)
+
+        all_time = q.get()
+
+        r = datetime.now()  # dummy for use in lambdas below
+        day = q.filter(lambda: r.start_time.date() == dt).get()
+        week = q.filter(lambda: r.start_time >= dt_week[0] and r.start_time <= dt_week[1]).get()
+        month = q.filter(lambda: r.start_time.year == dt.year and r.start_time.month == dt.month).get()
 
         return OrderedDict([
             (dt, day),
