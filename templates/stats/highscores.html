@@ -1,25 +1,88 @@
-<h2>Highscores</h2>
-
+<h2>{{ title }} Highscores</h2>
+{% if subtitle %}
+  <h3>{{ subtitle }}</h3>
+{% endif %}
+<p>
+  {% if prevlink %}<a class="tiny button" href="{{ prevlink }}">Previous</a>{% endif %}
+  {% if nextlink %}<a class="tiny button" href="{{ nextlink }}">Next</a>{% endif %}
+  &nbsp;
+</p>
 <table>
-  <summary>{{ period }}</summary>
   <thead>
     <tr>
-      <td></td>
-      <th scope="col">Name</th>
+      <td width="35"></td>
+      <th scope="col" width="35%">Name</th>
       <th scope="col" class="numbers">Points</th>
-      <th scope="col" class="numbers">Rounds won</th>
+      <th scope="col" class="numbers">Rounds</th>
     </tr>
   </thead>
   <tbody>
-  {% for id, name, points, rounds in highscores %}
+  {% for player, points, rounds in highscores %}
     <tr>
       <th scope="row">{{ loop.index }}.</th>
       <td>
-        <a onclick="showModal('ajax', '{{ url_for('stats_user') }}?name={{ name|urlencode }}')">{{ name }}</a>
+        <a href="{{ url_for('stats_user') }}?name={{ player.name|urlencode }}&amp;back={{ request.path }}">
+          {{ player.name }}
+        </a>
       </td>
       <td class="numbers">{{ points|format_number }}</td>
       <td class="numbers">{{ rounds|format_number }}</td>
     </tr>
   {% endfor %}
+  {% if highscores|length == 0 %}
+    <tr>
+      <td class="center" colspan="4">No data :(</td>
+    </tr>
+  {% endif %}
   </tbody>
 </table>
+
+<p>View Highscores:</p>
+
+{% if mode != 'all_time' %}
+  <a class="tiny button" href="{{ url_for('highscores') }}">
+    All time</a>
+{% endif %}
+{% if mode != 'year' %}
+  <a class="tiny button" href="{{ url_for_highscore('year', today) }}">
+    This year</a>
+{% endif %}
+  <a class="tiny button" href="{{ url_for_highscore('month', today) }}">
+    This month</a>
+  <a class="tiny button" href="{{ url_for_highscore('week', today) }}">
+    This week</a>
+  <a class="tiny button" href="{{ url_for_highscore('day', today) }}">
+    This day</a>
+
+<form method="post" class="modal-form" action="{{ url_for('highscore_search') }}" onsubmit="ajaxForm(event, this)">
+{% if mode != 'all_time' %}
+  <input type="hidden" name="mode" value="{{ mode }}">
+  <div class="form-input">
+    {% if mode == 'day' %}
+      <input type="date" name="dt" id="dt" value="{{ dt }}" min="2015-03-21" max="{{ today }}" required>
+      <label for="dt">Select Day</label></div>
+    {% endif %}
+    {% if mode == 'week' %}
+      <input type="week" name="dt" id="dt" value="{{ dt.year }}-W{{ dt.isocalendar().1 }}" min="2015-W12" max="{{ today.year }}-W{{ today.isocalendar().1 }}" required>
+      <label for="dt">Select Week</label></div>
+    {% endif %}
+    {% if mode == 'month' %}
+      <input type="month" name="dt" id="dt" value="{{ dt.strftime('%Y-%m') }}" min="2015-03" max="{{ today.strftime('%Y-%m') }}" required>
+      <label for="dt">Select Month</label></div>
+    {% endif %}
+    {% if mode == 'year' %}
+      <select name="dt" id="dt">
+        <option>2015</option>
+      </select>
+      <label for="dt">Select Year</label></div>
+    {% endif %}
+  </div>
+  <button class="tiny" type="submit">Show Highscores</button>
+{% endif %}
+</form>
+
+{% if backlink %}
+  <a class="button tiny" href="{{ backlink }}">
+    Back to player
+  </a>
+{% endif %}

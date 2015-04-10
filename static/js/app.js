@@ -165,18 +165,18 @@ window.showModal = function(modalId, data) {
                 modalsubmit.innerHTML = 'Login';
                 modalcancel.classList.add('hidden');
             } else {
-                modaltext.innerHTML = '<h2>Change your password</h2><p>Enter your desired password:</p>';
+                modaltext.innerHTML = '<h2>Change your password</h2>';
                 modalsubmit.innerHTML = 'Change password';
                 modalcancel.classList.remove('hidden');
             }
             modalinputs.innerHTML = '<div class="form-input">' +
-                    '<input type="password" name="password" id="password" '+(!!data.auto ? 'autofocus' : '')+' required>' +
-                    '<label for="password">Password</label></div>' +
+                    '<input type="'+(!!data.auto ? 'password' : 'text')+' " name="password" id="password" '+(!!data.auto ? 'autofocus' : '')+' required>' +
+                    '<label for="password">'+(!!data.auto ? '' : 'New')+' Password</label></div>' +
                     '<div class="form-checkbox">' +
                         '<input type="checkbox" name="rememberme" id="rememberme">' +
                         '<label for="rememberme">Save password?</label>' +
                     '</div>' +
-                    '<input type="hidden" name="login" value="'+escapeHTML(data.login)+'">';
+                    '<input type="hidden" name="login" value="' + escapeHTML(data.login) + '">';
             break;
 
         case 'ajax':
@@ -281,7 +281,7 @@ function chatMessage(opts) {
 
     chat.appendChild(message);
 
-    if (chat.scrollHeight - chat.scrollTop < 500) {
+    if (window.innerHeight < 500 || chat.scrollHeight - chat.scrollTop < 500) {
         chat.scrollTop = chat.scrollHeight;
     }
     if (chat.childElementCount > 100) {
@@ -422,6 +422,16 @@ document.addEventListener('DOMContentLoaded', function () {
         var playername;
         event.preventDefault();
         window.showModal('password', {login: localStorage.getItem('playername')});
+    });
+
+    /**
+     * Load links in modal inside the modal itself.
+     */
+    modal.addEventListener('click', function (event) {
+        if (!!event.target.href) {
+            event.preventDefault();
+            showModal('ajax', event.target.href);
+        }
     });
 
     modalform.addEventListener('submit', function (event) {

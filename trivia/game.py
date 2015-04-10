@@ -83,7 +83,7 @@ class TriviaGame(object):
 
             if self.round.solved:
                 game += ('<p><b>{round.solver.name}</b> got '
-                         '<b>{round.points}</b> points for answering in <b>{round.time_taken:.2f}s</b>:'
+                         '<b>{round.points}</b> points for answering in <b>{round.time_taken:.2f}s</b>: '
                          '<br>{round.question.question}</p>').format(round=self.round)
                 game += '<p>Correct answer: <b>{}</b></p>'.format(answer)
             else:

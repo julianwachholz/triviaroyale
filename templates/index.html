@@ -9,7 +9,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#009688">
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,300,500">
-  <link rel="stylesheet" href="/static/css/style.css?v2.1">
+  <link rel="stylesheet" href="/static/css/style.css?v2.2">
+  <link rel="stylesheet" href="/static/css/vendor.css?v2.2">
 </head>
 <body id="body" class="hidden">
   <header class="page-header z1">
@@ -42,9 +43,9 @@
         <dd id="playername">--</dd>
         <dt>Ping</dt>
         <dd id="ping">n/a</dd>
-        <dt>Points in last hour</dt>
+        <dt>Points (last 1h)</dt>
         <dd id="points-1h">-- (--)</dd>
-        <dt>Points today</dt>
+        <dt>Points (today)</dt>
         <dd id="points-day">-- (--)</dd>
       </dl>
       <button class="tiny" onclick="showModal('ajax', '{{ url_for('stats_user') }}?name=' + localStorage.getItem('playername'))">
@@ -54,7 +55,7 @@
     <div class="sidebar playerlist">
       <h3><span id="playercount">0 Players</span></h3>
       <ul class="unstyled" id="playerlist"></ul>
-      <button class="tiny" onclick="showModal('ajax', '{{ url_for('highscores') }}')">Highscores</button>
+      <button class="tiny" onclick="showModal('ajax', '{{ url_for('highscores', year=now.year) }}')">Highscores</button>
     </div>
     <footer class="sidebar">
       <div>
@@ -68,7 +69,7 @@
   <div id="modal" class="page-overlay page-modal hidden">
     <div id="modalcontent" class="modal-content z3">
       <div id="modaltext"></div>
-      <form id="modalform" method="post" action="#">
+      <form id="modalform" class="modal-form" method="post" action="#">
         <input type="hidden" name="command" value="" id="modalcommand">
         <div id="modalinputs"></div>
         <button type="submit" id="modalsubmit">Submit</button>
@@ -84,6 +85,6 @@
   var WS_ADDR = '{{ WS_ADDR }}';
   </script>
   <script src="/static/reconnecting-websocket.min.js"></script>
-  <script src="/static/js/app.js?v2.1"></script>
+  <script src="/static/js/app.js?v2.2"></script>
 </body>
 </html>

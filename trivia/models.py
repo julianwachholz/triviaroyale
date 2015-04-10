@@ -8,6 +8,8 @@ from pony.orm import Database, Required, Optional, Set
 from pony.orm import db_session, sql_debug, commit, select, get, count, avg  # NOQA
 from passlib.hash import bcrypt_sha256
 
+from trivia.helpers import get_week_tuple
+
 
 db = Database()
 sql_debug(bool(os.environ.get('SQL_DEBUG', False)))
@@ -268,24 +270,24 @@ class Player(db.Entity):
         if dt is None:
             dt = datetime.now().date()
 
-        dt_week = dt - timedelta(days=dt.weekday()), dt + timedelta(days=6 - dt.weekday())
+        dt_week = get_week_tuple(dt)
         dt_month = dt.replace(day=1)
+        dt_year = dt.replace(month=1, day=1)
 
-        q = select((count(r), sum(r.points), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
+        q = select((sum(r.points), count(r), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
                    for r in Round if r.solver == self)
-
-        all_time = q.get()
 
         r = datetime.now()  # dummy for use in lambdas below
         day = q.filter(lambda: r.start_time.date() == dt).get()
         week = q.filter(lambda: r.start_time >= dt_week[0] and r.start_time <= dt_week[1]).get()
         month = q.filter(lambda: r.start_time.year == dt.year and r.start_time.month == dt.month).get()
+        year = q.filter(lambda: r.start_time.year == dt.year).get()
 
         return OrderedDict([
-            (dt, day),
-            (dt_week, week),
-            (dt_month, month),
-            (None, all_time),
+            ('day', (dt, day)),
+            ('week', (dt_week, week)),
+            ('month', (dt_month, month)),
+            ('year', (dt_year, year)),
         ])
 
     @db_session

@@ -29,6 +29,19 @@ TIMESINCE_CHUNKS = (
 )
 
 
+def get_week_tuple(dt):
+    """
+    Get the start and end date of a date's week.
+
+    :type dt: datetime.date
+
+    """
+    return (
+        dt - datetime.timedelta(days=dt.weekday()),
+        dt + datetime.timedelta(days=6 - dt.weekday())
+    )
+
+
 def timesince(d, now=None, reversed=False):
     """
     Blatantly copied from:

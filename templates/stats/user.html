@@ -5,34 +5,77 @@
   <dt>Last login</dt>
   <dd>{{ player.last_played|timesince }} ago</dd>
 </dl>
-<table class="numbers">
+<table class="responsive numbers">
   <summary>Trivia Statistics</summary>
   <thead>
     <tr>
-      <td></td>
-      <th scope="col">{{ dates.0.strftime('%B %d, %Y') }}</th>
-      <th scope="col">
-        <abbr title="From {{ dates.1.0 }} to {{ dates.1.1 }}">
-          Week {{ dates.1.0.isocalendar().1 }} {{ dates.1.0.year }}
-        </abbr>
-      </th>
-      <th scope="col">{{ dates.2.strftime('%B %Y') }}</th>
-      <th scope="col">All time</th>
+      <th class="left" scope="col">Date</th>
+      {% for legend in legends %}
+        <th scope="col">{{ legend }}</th>
+      {% endfor %}
     </tr>
   </thead>
   <tbody>
-  {% for row in values %}
-    {% set outer_loop = loop %}
+  {% for range, (date, values) in stats.items() %}
     <tr>
-      <th scope="row">{{ legends[loop.index0] }}</th>
-      {% for num in row %}
-        <td>
-          {{ num|format_number(2) }}{% if outer_loop.index0 > 3 %}<small>s</small>{% endif %}
+      <th scope="row">
+        {% if range == 'day' %}
+          {{ date.strftime('%B %d, %Y') }}
+        {% endif %}
+        {% if range == 'week' %}
+          <abbr title="From {{ date.0.strftime('%B %d') }} to {{ date.1.strftime('%B %d') }}">
+            Week {{ date.0.isocalendar().1 }}, {{ date.0.year }}
+          </abbr>
+        {% endif %}
+        {% if range == 'month' %}
+          {{ date.strftime('%B %Y') }}
+        {% endif %}
+        {% if range == 'year' %}
+          {{ date.year }}
+        {% endif %}
+      </th>
+      {% for num in values %}
+        <td data-legend="{{ legends[loop.index0] }}">
+          {{ num|format_number(2) }}
+          {%- if loop.index0 > 3 %}<small>s</small>{% endif %}
         </td>
       {% endfor %}
     </tr>
   {% endfor %}
   </tbody>
+  {#
+  <tfoot>
+    <tr>
+      <td></td>
+      <td>
+        <a href="{{ url_for_highscore('day', dates.0) }}?player={{ player.name|urlencode }}">
+          Highscores
+        </a>
+      </td>
+      <td>
+        <a href="{{ url_for_highscore('week', dates.1.0) }}?player={{ player.name|urlencode }}">
+          Highscores
+        </a>
+      </td>
+      <td>
+        <a href="{{ url_for_highscore('month', dates.2) }}?player={{ player.name|urlencode }}">
+          Highscores
+        </a>
+      </td>
+      <td>
+        <a href="{{ url_for_highscore('year', dates.3) }}?player={{ player.name|urlencode }}">
+          Highscores
+        </a>
+      </td>
+    </tr>
+  </tfoot>
+  #}
 </table>
 
-<button class="tiny" onclick="showModal('ajax', '/stats/search/');">Search user</button>
+<a class="button tiny" href="{{ url_for('stats_search') }}">Search users</a>
+
+{% if backlink %}
+  <a class="button tiny" href="{{ backlink }}">
+    Back to Highscores
+  </a>
+{% endif %}

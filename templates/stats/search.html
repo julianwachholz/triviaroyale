@@ -17,9 +17,9 @@
   </ul>
 {% endif %}
 
-<form id="statsform" method="get" action="{{ url_for('stats_user') }}" onsubmit="ajaxForm(event, this)">
+<form method="get" class="modal-form" action="{{ url_for('stats_user') }}" onsubmit="ajaxForm(event, this)">
   <div class="form-input">
-    <input type="text" tabindex="1" name="name" id="name" maxlength="30" value="{{ name }}" required>
+    <input type="search" tabindex="1" name="name" id="name" maxlength="30" value="{{ name }}" required>
     <label for="name">Nickname</label></div>
   </div>
   <button type="submit">Search</button>
