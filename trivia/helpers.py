@@ -1,11 +1,15 @@
+import os
 import datetime
 import locale
+
+
+LOCALE = os.environ.get('LC_ALL', 'en_US.UTF-8')
 
 
 def format_number(num, decimal_places=0):
     if not isinstance(num, (int, float)):
         return 'n/a'
-    locale.setlocale(locale.LC_ALL, 'en_US.UTF8')
+    locale.setlocale(locale.LC_ALL, LOCALE)
     if decimal_places > 0 and isinstance(num, float):
         return locale.format('%.{}f'.format(decimal_places), num, grouping=True)
     return locale.format('%d', num, grouping=True)
