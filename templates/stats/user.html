@@ -19,6 +19,7 @@
   {% for range, (date, values) in stats.items() %}
     <tr>
       <th scope="row">
+        <a href="{{ url_for_highscore(range, date.0 if range == 'week' else date) }}?player={{ player.name|urlencode }}">
         {% if range == 'day' %}
           {{ date.strftime('%B %d, %Y') }}
         {% endif %}
@@ -33,6 +34,7 @@
         {% if range == 'year' %}
           {{ date.year }}
         {% endif %}
+        </a>
       </th>
       {% for num in values %}
         <td data-legend="{{ legends[loop.index0] }}">
