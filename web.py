@@ -2,6 +2,7 @@
 
 import os
 import datetime
+import calendar
 
 from flask import Flask, abort, request, redirect, url_for, render_template
 from raven.contrib.flask import Sentry
@@ -95,41 +96,55 @@ def highscore_search():
 
 
 def url_for_highscore(mode, dt):
+    if not isinstance(dt, (datetime.date, datetime.datetime)):
+        return None
+    now = datetime.datetime.now().date()
+
     if mode == 'year':
-        return url_for('highscores', year=dt.year)
+        if EARLIEST_DATE.year <= dt.year <= now.year:
+            return url_for('highscores', year=dt.year)
+        else:
+            return None
+
     if mode == 'month':
-        return url_for('highscores', year=dt.year, month=dt.month)
+        if EARLIEST_DATE.replace(day=1) <= dt.replace(day=1) <= now.replace(day=1):
+            return url_for('highscores', year=dt.year, month=dt.month)
+        else:
+            return None
+
     if mode == 'week':
-        return url_for('highscores', year=dt.year, week=dt.isocalendar()[1])
+        if EARLIEST_DATE.isocalendar()[1] <= dt.isocalendar()[1] <= now.isocalendar()[1]:
+            return url_for('highscores', year=dt.year, week=dt.isocalendar()[1])
+        else:
+            return None
+
     if mode == 'day':
-        return url_for('highscores', year=dt.year, month=dt.month, day=dt.day)
+        if EARLIEST_DATE <= dt <= now:
+            return url_for('highscores', year=dt.year, month=dt.month, day=dt.day)
+        else:
+            return None
 
 app.jinja_env.globals['url_for_highscore'] = url_for_highscore
 
 
 def _highscore_nav_links(mode, dt):
-    y = None
+    prev_dt, next_dt = None, None
 
     if mode == 'year':
-        y = datetime.timedelta(days=360)
+        prev_dt = dt.replace(year=dt.year - 1)
+        next_dt = dt.replace(year=dt.year + 1)
+
     if mode == 'month':
-        y = datetime.timedelta(days=30)
-    if mode == 'week':
-        y = datetime.timedelta(days=7)
-    if mode == 'day':
-        y = datetime.timedelta(days=1)
+        days = calendar.monthrange(dt.year, dt.month)[1]
+        prev_dt = dt - datetime.timedelta(days=dt.day)
+        next_dt = dt + datetime.timedelta(days=days - dt.day + 1)
 
-    if y is None:
-        return None, None
+    if mode == 'week' or mode == 'day':
+        y = datetime.timedelta(days=7 if mode == 'week' else 1)
+        prev_dt = dt - y
+        next_dt = dt + y
 
-    prev_dt, next_dt = dt - y, dt + y
-    prevlink, nextlink = None, None
-
-    if prev_dt >= EARLIEST_DATE:
-        prevlink = url_for_highscore(mode, prev_dt)
-    if next_dt <= datetime.datetime.now().date():
-        nextlink = url_for_highscore(mode, next_dt)
-    return prevlink, nextlink
+    return url_for_highscore(mode, prev_dt), url_for_highscore(mode, next_dt)
 
 
 @app.route('/highscores/')
@@ -147,12 +162,14 @@ def highscores(year=None, month=None, day=None, week=None):
     today = datetime.datetime.now().date()
     r = today  # dummy for filter lambdas
 
+    # daily highscores
     if year and month and day:
         mode = 'day'
         dt = datetime.date(year, month, day)
         f = lambda: r.start_time.date() == dt
         title = dt.strftime('%B %d, %Y')
 
+    # weekly highscores
     elif year and week:
         mode = 'week'
         dt, dt_week_end = get_week_tuple(datetime.date(year, 1, 1) + datetime.timedelta(weeks=week - 1))
@@ -162,12 +179,14 @@ def highscores(year=None, month=None, day=None, week=None):
         end_fmt = ' - %B %d' if dt.month != dt_week_end.month else '-%d'
         subtitle = ' ({}{})'.format(dt.strftime('%B %d'), dt_week_end.strftime(end_fmt))
 
+    # monthly highscores
     elif year and month:
         mode = 'month'
         dt = datetime.date(year, month, 1)
         f = lambda: r.start_time.year == dt.year and r.start_time.month == dt.month
         title = dt.strftime('%B %Y')
 
+    # yearly highscores
     elif year:
         mode = 'year'
         dt = datetime.date(year, 1, 1)

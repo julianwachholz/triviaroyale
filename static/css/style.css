@@ -72,10 +72,6 @@ summary {
   line-height: 50px;
 }
 
-.center {
-  text-align: center;
-}
-
 a {
   cursor: pointer;
   color: inherit;
@@ -488,6 +484,13 @@ td.numbers, .numbers td {
 }
 .numbers td {
   width: 15%;
+}
+
+.empty-table {
+  color: #607d8b;
+  text-align: center;
+  font-size: 1.2em;
+  padding: 1em;
 }
 
 @media screen and (max-width: 480px) {
