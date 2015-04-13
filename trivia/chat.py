@@ -210,9 +210,10 @@ class GameController(object):
         asyncio.async(self.broadcast(entry))
         entry.update(time=int(time.time()))
 
-        self.chat_scrollback.append(entry)
-        if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
-            self.chat_scrollback = self.chat_scrollback[1:]
+        if not text.startswith('!admin'):
+            self.chat_scrollback.append(entry)
+            if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
+                self.chat_scrollback = self.chat_scrollback[1:]
 
         logger.info('Chat: {}: {}'.format(player['name'], text))
         asyncio.async(self.trivia.chat(ws, player, text))
