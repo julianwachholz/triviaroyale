@@ -55,7 +55,7 @@
     <div class="sidebar playerlist">
       <h3><span id="playercount">0 Players</span></h3>
       <ul class="unstyled" id="playerlist"></ul>
-      <button class="tiny" onclick="showModal('ajax', '{{ url_for('highscores', year=now.year) }}')">Highscores</button>
+      <button class="tiny" onclick="showModal('ajax', '{{ url_for('highscores', year=now.year, month=now.month) }}')">Highscores</button>
     </div>
     <footer class="sidebar">
       <div>
