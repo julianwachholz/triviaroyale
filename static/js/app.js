@@ -290,7 +290,7 @@ function chatMessage(opts) {
             }
         }
     } else {
-        text = formatText(escapeHTML(opts.player + ': ' + opts.text));
+        text = escapeHTML(opts.player) + ': ' + formatText(escapeHTML(opts.text));
         if (!!opts.time) {
             tstamp = new Date(1000 * opts.time);
         }

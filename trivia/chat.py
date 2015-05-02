@@ -19,13 +19,31 @@ class GameController(object):
     CHAT_SCROLLBACK = 30
 
     COMMANDS = [
+        'help',
         'login',
         'admin',
         'vote',
         'start',
         'hint',
         'next',
+        'info',
     ]
+
+    HELP = {
+        '': ["Available commands:", "*/help* - This text.", "*/start* - Start a new round.",
+             "*/hint* - Request a hint.", "*/next* - Skip to next question.",
+             "*/login* - Change nick or password.", "*/info* - More info about trivia.ju.io",
+             "Use /help _<command>_ for more info.",
+             "All commands may also be prefixed with *!* instead of a slash */*."],
+        'vote': ["*/vote* - Rate a question after a round.",
+                 "Use */++* or */--* to leave a positive of negative rating respectively."],
+        'start': ["*/start* Start a new round of Trivia."],
+        'hint': ["*/hint* Request a new hint for the current question, if possible. Shorthand: */h*"],
+        'next': ["*/next* Skip the current waiting time between rounds.",
+                 "Only possible if you have a streak of at least 5."],
+        'login': ["*/login* _<nick>_ or */login* password <password>_", "You may change your player name with this.",
+                  "If you change your password, you will need to enter it again the next time you log in."],
+    }
 
     def __init__(self):
         self.clients = set()
@@ -133,8 +151,16 @@ class GameController(object):
                 fun(ws, *args)
             else:
                 fun(ws, args)
+            logger.debug('Ran command from {}: {} with {}'.format(self.players[ws]['name'], command, args))
         else:
             logger.warn('Unknown command from {}: {} with {}'.format(self.players[ws]['name'], command, args))
+
+    def help(self, ws, *args, **kwargs):
+        if len(args) == 0 or args[0] == 'help':
+            helptext = self.HELP['']
+        else:
+            helptext = self.HELP.get(args[0], ["Unknown command."])
+        asyncio.async(self.send(ws, [{'system': line} for line in helptext]))
 
     def vote(self, ws, player_vote, *args, **kwargs):
         if player_vote in (-1, 1):
@@ -172,8 +198,12 @@ class GameController(object):
                 self.trivia.next_round()
 
     @db_session
-    def login(self, ws, login, password=None, auto=False, *args, **kwargs):
-        if len(login) > Player.NAME_MAX_LEN:
+    def login(self, ws, login=None, password=None, *, auto=False, **kwargs):
+        """
+        Register a player, set and change password and change nickname multi-function.
+
+        """
+        if login is None or len(login) > Player.NAME_MAX_LEN:
             return
 
         if ws in self.players.keys():
