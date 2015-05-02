@@ -428,9 +428,9 @@ document.addEventListener('DOMContentLoaded', function () {
      * Load links in modal inside the modal itself.
      */
     modal.addEventListener('click', function (event) {
-        if (!!event.target.href) {
+        if (!!event.target.href || !!event.target.parentNode.href) {
             event.preventDefault();
-            showModal('ajax', event.target.href);
+            showModal('ajax', event.target.href || event.target.parentNode.href);
         }
     });
 
