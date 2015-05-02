@@ -1,7 +1,6 @@
 import asyncio
 import time
 import math
-import re
 import logging
 from datetime import datetime
 
@@ -33,12 +32,6 @@ class TriviaGame(object):
     HINT_TIMING = 10.0
     HINT_COOLDOWN = 2.5
     HINT_MAX = 3
-
-    RE_START = re.compile(r'^!start', re.I)
-    RE_HINT = re.compile(r'^!h(int)?', re.I)
-    RE_NEXT = re.compile(r'^!n(ext)?', re.I)
-
-    RE_ADMIN = re.compile(r'^!a(?:dmin)? (\S+) ?(.*?)$', re.I)
 
     def __init__(self, broadcast, send):
         self.state = self.STATE_IDLE
@@ -138,27 +131,10 @@ class TriviaGame(object):
             ws, player, text = yield from self.queue.get()
             self.last_action = time.time()
 
-            if self.RE_ADMIN.search(text) and player['permissions'] > 0:
-                match = self.RE_ADMIN.match(text)
-                admin = AdminCommand(self, player['id'])
-                admin.run(match.group(1), *match.group(2).split())
-                continue
-
             if self.state == self.STATE_QUESTION:
                 if self.round.question.check_answer(text):
                     asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
                     asyncio.async(self.round_solved(ws, player))
-                elif self.RE_HINT.search(text):
-                    self.get_hint(player['name'])
-
-            if self.state == self.STATE_WAITING:
-                if self.RE_NEXT.search(text) and self.has_streak(player) and \
-                   time.time() - self.timer_start > self.WAIT_TIME_MIN:
-                        self.next_round()
-
-            if self.state == self.STATE_IDLE:
-                if self.RE_START.search(text):
-                    self.timeout = asyncio.async(self.delay_new_round(new_round=True))
 
     @asyncio.coroutine
     def round_solved(self, ws, player):
@@ -416,39 +392,3 @@ class TriviaGame(object):
                     vote_up=q.vote_up + self.votes['up'],
                     vote_down=q.vote_down + self.votes['down']
                 )
-
-
-class AdminCommand(object):
-    """
-    Run an administrative command.
-
-    """
-    def __init__(self, game, player_id):
-        self.game = game
-        self.player_id = player_id
-
-    def run(self, cmd, *args):
-        if hasattr(self, cmd):
-            with db_session():
-                player = Player[self.player_id]
-                if player.has_perm(cmd):
-                    logger.info("{} executed: {}({!r})".format(player.name, cmd, args))
-                    return getattr(self, cmd)(self, *args)
-                else:
-                    logger.warn("{} has no access to: {}".format(player, cmd))
-        else:
-            logger.info("Player #{} triggered unknown command: {}".format(self.player_id, cmd))
-
-    def next(self, *args):
-        self.game.next_round()
-
-    def stop(self, *args):
-        self.game.stop_game("Stopped by administrator.", lock='lock' in args)
-
-    def unlock(self, *args):
-        self.game.state = TriviaGame.STATE_IDLE
-        self.game.broadcast_info()
-
-    def start(self, *args):
-        """If game is locked, only this will start it again."""
-        self.game.timeout = asyncio.async(self.game.delay_new_round(new_round=True))

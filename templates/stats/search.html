@@ -11,7 +11,7 @@
   <ul>
   {% for player in suggestions %}
     <li>
-      <a onclick="showModal('ajax', '{{ url_for('stats_user') }}?name={{ player.name }}')">{{ player.name }}</a>
+      <a href="{{ url_for('stats_user') }}?name={{ player.name }}">{{ player.name }}</a>
     </li>
   {% endfor %}
   </ul>

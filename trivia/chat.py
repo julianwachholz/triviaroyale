@@ -2,6 +2,7 @@ import asyncio
 import time
 import logging
 
+from trivia.game import TriviaGame
 from trivia.models import Player, db_session, commit
 
 
@@ -17,7 +18,14 @@ class GameController(object):
     """
     CHAT_SCROLLBACK = 30
 
-    COMMANDS = ['login', 'vote', 'start', 'hint']
+    COMMANDS = [
+        'login',
+        'admin',
+        'vote',
+        'start',
+        'hint',
+        'next',
+    ]
 
     def __init__(self):
         self.clients = set()
@@ -111,6 +119,10 @@ class GameController(object):
         logger.info('Password: {} set new password.'.format(player))
 
     def command(self, ws, command, args):
+        if command.startswith('_'):
+            logger.warn('Illegal command from {}: {} with {}'.format(self.players[ws]['name'], command, args))
+            return
+
         if command in self.COMMANDS and hasattr(self, command):
             fun = getattr(self, command)
             if args is None:
@@ -149,6 +161,15 @@ class GameController(object):
 
         """
         self.trivia.get_hint(from_player=self.players[ws]['name'])
+
+    def next(self, ws, *args, **kwargs):
+        """
+        Skip the current waiting time and go directly to the next question.
+
+        """
+        if self.trivia.state == TriviaGame.STATE_WAITING and self.trivia.has_streak(self.players[ws]['name']) and \
+           time.time() - self.trivia.timer_start > self.trivia.WAIT_TIME_MIN:
+                self.trivia.next_round()
 
     @db_session
     def login(self, ws, login, password=None, auto=False, *args, **kwargs):
@@ -201,6 +222,16 @@ class GameController(object):
         asyncio.async(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
         asyncio.async(self.send(ws, self.chat_scrollback))
 
+    def admin(self, ws, *args, **kwargs):
+        """
+        Issue an admin only command.
+
+        """
+        player = self.players[ws]
+        if player['permissions'] > 0:
+            admin_command = AdminCommand(self.trivia, player['id'])
+            admin_command.run(args[0], *args[1:])
+
     def chat(self, ws, text):
         player = self.players[ws]
         entry = {
@@ -217,3 +248,39 @@ class GameController(object):
 
         logger.info('Chat: {}: {}'.format(player['name'], text))
         asyncio.async(self.trivia.chat(ws, player, text))
+
+
+class AdminCommand(object):
+    """
+    Run an administrative command.
+
+    """
+    def __init__(self, game, player_id):
+        self.game = game
+        self.player_id = player_id
+
+    def run(self, cmd, *args):
+        if hasattr(self, cmd):
+            with db_session():
+                player = Player[self.player_id]
+                if player.has_perm(cmd):
+                    logger.info("{} executed: {}({!r})".format(player.name, cmd, args))
+                    return getattr(self, cmd)(self, *args)
+                else:
+                    logger.warn("{} has no access to: {}".format(player, cmd))
+        else:
+            logger.info("Player #{} triggered unknown command: {}".format(self.player_id, cmd))
+
+    def next(self, *args):
+        self.game.next_round()
+
+    def stop(self, *args):
+        self.game.stop_game("Stopped by administrator.", lock='lock' in args)
+
+    def unlock(self, *args):
+        self.game.state = TriviaGame.STATE_IDLE
+        self.game.broadcast_info()
+
+    def start(self, *args):
+        """If game is locked, only this will start it again."""
+        self.game.timeout = asyncio.async(self.game.delay_new_round(new_round=True))

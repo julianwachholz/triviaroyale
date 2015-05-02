@@ -216,6 +216,30 @@ window.ajaxForm = function (event, form) {
 };
 
 
+/**
+ * Chat form was submitted, check if it was a command,
+ * otherwise we just send it as chat.
+ */
+var specialCommands = {
+    '++': ['vote', 1],
+    '--': ['vote', -1],
+    'good': ['vote', 1],
+    'bad': ['vote', -1],
+    'h': ['hint'],
+};
+
+function chatFormSubmit(text) {
+    if (text.search(/^!|\//) === 0) {
+        var parts = text.substring(1).split(' ');
+        if (specialCommands.hasOwnProperty(parts[0])) {
+            parts = specialCommands[parts[0]];
+        }
+        command(parts[0], parts.slice(1));
+    } else {
+        ws.send(JSON.stringify({text: text}));
+    }
+}
+
 function command(cmd, args) {
     ws.send(JSON.stringify({
         command: cmd, args: args
@@ -399,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (chatinput.value.length > 0) {
-            ws.send(JSON.stringify({text: chatinput.value}));
+            chatFormSubmit(chatinput.value);
             chatinput.value = '';
         }
     });
@@ -454,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function () {
             console.info("remembering password");
             localStorage.setItem('password', args.password);
         }
-        window.command(modalcommand.value, args);
+        command(modalcommand.value, args);
 
         modal.classList.remove('show');
         modalTimeout = setTimeout(function () {

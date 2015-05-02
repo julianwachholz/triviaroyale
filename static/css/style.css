@@ -209,7 +209,7 @@ aside.open {
   right: 0%;
 }
 .sidebar {
-  padding: 2em;
+  padding: .5em;
   flex: 3 0;
 }
 .sidebar.playerlist {
@@ -555,6 +555,10 @@ h2 + .progress {
 
   .question-hint {
     font-size: 1.1em;
+  }
+
+  .sidebar {
+    padding: 2em;
   }
 
   .modal-content {
