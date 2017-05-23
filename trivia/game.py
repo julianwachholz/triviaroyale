@@ -21,11 +21,11 @@ class TriviaGame(object):
     STATE_WAITING = 'waiting'
     STATE_LOCKED = 'locked'
 
-    ROUND_TIME = 45.0
+    ROUND_TIME = 60.0
     WAIT_TIME = 10.0
-    WAIT_TIME_NEW_ROUND = 5.0
+    WAIT_TIME_NEW_ROUND = 10.0
     WAIT_TIME_MIN = 2.5
-    WAIT_TIME_EXTRA = 7.0  # When showing additional info after a round
+    WAIT_TIME_EXTRA = 20.0  # When showing additional info after a round
     INACTIVITY_TIMEOUT = ROUND_TIME * 3
 
     STREAK_STEPS = 5
@@ -113,31 +113,27 @@ class TriviaGame(object):
             'timer': timer,
         }
 
-    @asyncio.coroutine
-    def run(self):
-        asyncio.async(self.run_chat())
+    async def run(self):
+        asyncio.ensure_future(self.run_chat())
 
-    @asyncio.coroutine
-    def chat(self, ws, player, text):
-        yield from self.queue.put((ws, player, text))
+    async def chat(self, ws, player, text):
+        await self.queue.put((ws, player, text))
 
-    @asyncio.coroutine
-    def run_chat(self):
+    async def run_chat(self):
         """
         Monitor chat for commands and question answers.
 
         """
         while True:
-            ws, player, text = yield from self.queue.get()
+            ws, player, text = await self.queue.get()
             self.last_action = time.time()
 
             if self.state == self.STATE_QUESTION:
                 if self.round.question.check_answer(text):
                     asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
-                    asyncio.async(self.round_solved(ws, player))
+                    asyncio.ensure_future(self.round_solved(ws, player))
 
-    @asyncio.coroutine
-    def round_solved(self, ws, player):
+    async def round_solved(self, ws, player):
         self.state = self.STATE_WAITING
         if self.streak['player_id'] == player['id']:
             self.streak['count'] += 1
@@ -165,9 +161,9 @@ class TriviaGame(object):
             played_round.end_round()
             self.round = played_round
 
-        asyncio.async(self.send(ws, {'setinfo': player_db.get_recent_scores()}))
+        asyncio.ensure_future(self.send(ws, {'setinfo': player_db.get_recent_scores()}))
 
-        asyncio.async(self.round_end())
+        asyncio.ensure_future(self.round_end())
         logger.info('#{} END: {} for {} points ({} hints used) in {:.2f}s: {}'.format(
             self.round.id, self.round.solver, self.round.points, self.hints['count'],
             self.round.time_taken, self.round.question))
@@ -179,7 +175,7 @@ class TriviaGame(object):
         """
         if self.state == self.STATE_WAITING and self.timeout is not None:
             asyncio.get_event_loop().call_soon_threadsafe(self.timeout.cancel)
-            asyncio.async(self.start_new_round())
+            asyncio.ensure_future(self.start_new_round())
 
     def stop_game(self, reason=None, lock=False):
         """
@@ -193,13 +189,12 @@ class TriviaGame(object):
         else:
             self.state = self.STATE_IDLE
 
-        asyncio.async(self.broadcast({
+        asyncio.ensure_future(self.broadcast({
             'system': reason or "Stopping due to inactivity!",
         }))
         self.broadcast_info()
 
-    @asyncio.coroutine
-    def delay_new_round(self, new_round=False):
+    async def delay_new_round(self, new_round=False):
         if self.state == self.STATE_STARTING:
             logger.warn('Preventing multiple simultaneous games!')
             return
@@ -217,17 +212,16 @@ class TriviaGame(object):
         else:
             self.state = self.STATE_WAITING
 
-        yield from asyncio.sleep(wait)
+        await asyncio.sleep(wait)
 
         if self.player_count < 1 or time.time() - self.last_action > self.INACTIVITY_TIMEOUT:
             self.stop_game()
             logger.info('No activity, stopping game. ({} players online, {:.2f}s)'.format(
                 self.player_count, time.time() - self.last_action))
         else:
-            asyncio.async(self.start_new_round())
+            asyncio.ensure_future(self.start_new_round())
 
-    @asyncio.coroutine
-    def start_new_round(self):
+    async def start_new_round(self):
         self.save_votes()
 
         with db_session():
@@ -238,8 +232,8 @@ class TriviaGame(object):
                 new_round = Round.new(self.round_start)
             commit()
             self.round = new_round
-        timeout = asyncio.async(self.round_timeout())
-        asyncio.async(self.broadcast_update(timeout))
+        timeout = asyncio.ensure_future(self.round_timeout())
+        asyncio.ensure_future(self.broadcast_update(timeout))
 
         self.timeout = timeout
         self.state = self.STATE_QUESTION
@@ -249,29 +243,26 @@ class TriviaGame(object):
         self.announce('Round #{}'.format(self.round.id))
         self.broadcast_info()
 
-    @asyncio.coroutine
-    def round_timeout(self):
+    async def round_timeout(self):
         """
         If this future isn't canceled the round will end with no winner.
 
         """
-        yield from asyncio.sleep(self.ROUND_TIME)
+        await asyncio.sleep(self.ROUND_TIME)
         with db_session():
             end_round = Round[self.round.id]
             end_round.end_round()
             self.round = end_round
         logger.info('#{} END: NO WINNER: {}'.format(self.round.id, self.round.question))
-        asyncio.async(self.round_end())
+        asyncio.ensure_future(self.round_end())
 
-    @asyncio.coroutine
-    def round_end(self):
+    async def round_end(self):
         self.state = self.STATE_WAITING
         self.timer_start = time.time()
         self.broadcast_info()
-        self.timeout = asyncio.async(self.delay_new_round())
+        self.timeout = asyncio.ensure_future(self.delay_new_round())
 
-    @asyncio.coroutine
-    def broadcast_update(self, fut, num=1):
+    async def broadcast_update(self, fut, num=1):
         """
         Periodically update the game info to all clients.
         Mainly used to announce new hint availability.
@@ -279,22 +270,22 @@ class TriviaGame(object):
         :param fut: Current round timeout future.
 
         """
-        yield from asyncio.sleep(self.HINT_TIMING)
+        await asyncio.sleep(self.HINT_TIMING)
         if fut.cancelled():
             return
 
         self.broadcast_info()
 
         if num + 1 < self.HINT_MAX:
-            asyncio.async(self.broadcast_update(fut, num + 1))
+            asyncio.ensure_future(self.broadcast_update(fut, num + 1))
 
     def broadcast_info(self):
-        asyncio.async(self.broadcast({
+        asyncio.ensure_future(self.broadcast({
             'setinfo': self.get_round_info(),
         }))
 
     def announce(self, message):
-        asyncio.async(self.broadcast({
+        asyncio.ensure_future(self.broadcast({
             'system': message,
             'announce': True,
         }))
@@ -320,7 +311,7 @@ class TriviaGame(object):
             logger.info('#{} STREAK: {} has {}'.format(self.round.id, player_name, streak))
             if streak == self.STREAK_STEPS:
                 info += " You can skip to the next round with *!next*"
-        asyncio.async(self.broadcast({
+        asyncio.ensure_future(self.broadcast({
             'system': info,
         }))
 

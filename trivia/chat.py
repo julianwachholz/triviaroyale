@@ -30,19 +30,36 @@ class GameController(object):
     ]
 
     HELP = {
-        '': ["Available commands:", "*/help* - This text.", "*/start* - Start a new round.",
-             "*/hint* - Request a hint.", "*/next* - Skip to next question.",
-             "*/login* - Change nick or password.", "*/info* - More info about trivia.ju.io",
-             "Use /help _<command>_ for more info.",
-             "All commands may also be prefixed with *!* instead of a slash */*."],
-        'vote': ["*/vote* - Rate a question after a round.",
-                 "Use */++* or */--* to leave a positive of negative rating respectively."],
-        'start': ["*/start* Start a new round of Trivia."],
-        'hint': ["*/hint* Request a new hint for the current question, if possible. Shorthand: */h*"],
-        'next': ["*/next* Skip the current waiting time between rounds.",
-                 "Only possible if you have a streak of at least 5."],
-        'login': ["*/login* _<nick>_ or */login* password <password>_", "You may change your player name with this.",
-                  "If you change your password, you will need to enter it again the next time you log in."],
+        '': [
+            "Available commands:", 
+            "*/help* - This text.", 
+            "*/start* - Start a new round.",
+            "*/hint* - Request a hint.", 
+            "*/next* - Skip to next question.",
+            "*/login* - Change nick or password.", 
+            "*/info* - More info about trivia.ju.io",
+            "Use /help _<command>_ for more info.",
+            "All commands may also be prefixed with *!* instead of a slash */*.",
+        ],
+        'vote': [
+            "*/vote* - Rate a question after a round.",
+            "Use */++* or */--* to leave a positive of negative rating respectively.",
+        ],
+        'start': [
+            "*/start* Start a new round of Trivia.",
+        ],
+        'hint': [
+            "*/hint* Request a new hint for the current question, if possible. Shorthand: */h*",
+        ],
+        'next': [
+            "*/next* Skip the current waiting time between rounds.",
+            "Only possible if you have a streak of at least 5.",
+        ],
+        'login': [
+            "*/login* _<nick>_ or */login* password <password>_", 
+            "You may change your player name with this.",
+            "If you change your password, you will need to enter it again the next time you log in.",
+        ],
     }
 
     def __init__(self):
@@ -74,7 +91,7 @@ class GameController(object):
                 player = self.players[ws]
                 del self.players[ws]
                 self.trivia.player_count -= 1
-                asyncio.async(self.broadcast({
+                asyncio.ensure_future(self.broadcast({
                     'system': "{} left.".format(player['name']),
                     'setinfo': self._get_player_info(),
                 }))
@@ -82,18 +99,18 @@ class GameController(object):
             self.clients.remove(ws)
 
     def _set_name(self, ws, player_id, name, old_name=None):
-        asyncio.async(self.send(ws, {'setinfo': {
+        asyncio.ensure_future(self.send(ws, {'setinfo': {
             'playername': name,
         }}))
         if old_name is None:
             self.trivia.player_count += 1
-            asyncio.async(self.broadcast({
+            asyncio.ensure_future(self.broadcast({
                 'system': "{} joined.".format(name),
                 'setinfo': self._get_player_info(),
             }))
             logger.info('Join: {} (#{})'.format(name, player_id))
         else:
-            asyncio.async(self.broadcast({
+            asyncio.ensure_future(self.broadcast({
                 'system': "{} is now known as *{}*.".format(old_name, name),
                 'setinfo': self._get_player_info(),
             }))
@@ -103,13 +120,13 @@ class GameController(object):
         player = self.players[ws]
 
         if player['name'] == new_name:
-            asyncio.async(self.send(ws, {
+            asyncio.ensure_future(self.send(ws, {
                 'system': 'You are already known as *{}*.'.format(new_name),
             }))
         else:
             with db_session():
                 if Player.exists(lambda p: p.name == new_name):
-                    asyncio.async(self.send(ws, {
+                    asyncio.ensure_future(self.send(ws, {
                         'system': 'This name is not available: *{}*.'.format(new_name),
                     }))
                 else:
@@ -131,7 +148,7 @@ class GameController(object):
         player = self.players[ws]
         player = Player[self.players[ws]['id']]
         player.set_password(password)
-        asyncio.async(self.send(ws, {
+        asyncio.ensure_future(self.send(ws, {
             'system': 'Password successfully changed!',
         }))
         logger.info('Password: {} set new password.'.format(player))
@@ -160,7 +177,14 @@ class GameController(object):
             helptext = self.HELP['']
         else:
             helptext = self.HELP.get(args[0], ["Unknown command."])
-        asyncio.async(self.send(ws, [{'system': line} for line in helptext]))
+        asyncio.ensure_future(self.send(ws, [{'system': line} for line in helptext]))
+
+    def info(self, ws, *args, **kwargs):
+        infotext = [
+            'This game uses Python and asyncio under the hood.',
+            'Find out more on https://github.com/julianwachholz/trivia.ju.io',
+        ]
+        asyncio.ensure_future(self.send(ws, [{'system': line} for line in infotext]))
 
     def vote(self, ws, player_vote, *args, **kwargs):
         if player_vote in (-1, 1):
@@ -169,7 +193,7 @@ class GameController(object):
             except KeyError:
                 return
             if self.trivia.queue_vote(player_name, player_vote):
-                asyncio.async(self.send(ws, {'setinfo': {
+                asyncio.ensure_future(self.send(ws, {'setinfo': {
                     'question-vote': '<p class="question-vote">Thank you!</p>',
                 }}))
 
@@ -179,7 +203,7 @@ class GameController(object):
 
         """
         logger.info('Start: {}'.format(self.players[ws]['name']))
-        self.trivia.timeout = asyncio.async(self.trivia.delay_new_round(True))
+        self.trivia.timeout = asyncio.ensure_future(self.trivia.delay_new_round(True))
 
     def hint(self, ws, *args, **kwargs):
         """
@@ -218,13 +242,13 @@ class GameController(object):
             commit()
         elif not player.check_password(password):
             if password is None or auto:
-                asyncio.async(self.send(ws, {
+                asyncio.ensure_future(self.send(ws, {
                     'prompt': 'password',
                     'data': {'login': login, 'auto': True},
                 }))
                 return
             else:
-                asyncio.async(self.send(ws, {
+                asyncio.ensure_future(self.send(ws, {
                     'system': 'Invalid username/password!',
                     'system_extra': '<a href="#" onclick="showModal(\'password\', {{login:\'{}\'}})">'
                                     'Try again</a>'.format(login),
@@ -242,15 +266,15 @@ class GameController(object):
         self._set_name(ws, player.id, player.name)
 
         if not player.has_password():
-            asyncio.async(self.send(ws, {
+            asyncio.ensure_future(self.send(ws, {
                 'system': 'You currently have no password!',
                 'system_extra': '<a href="#" onclick="showModal(\'password\', {{login:\'{}\'}})">'
                                 'click here to set a password!</a>'.format(player.name),
             }))
 
-        asyncio.async(self.send(ws, {'setinfo': player.get_recent_scores()}))
-        asyncio.async(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
-        asyncio.async(self.send(ws, self.chat_scrollback))
+        asyncio.ensure_future(self.send(ws, {'setinfo': player.get_recent_scores()}))
+        asyncio.ensure_future(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
+        asyncio.ensure_future(self.send(ws, self.chat_scrollback))
 
     def admin(self, ws, *args, **kwargs):
         """
@@ -268,7 +292,7 @@ class GameController(object):
             'player': player['name'],
             'text': text,
         }
-        asyncio.async(self.broadcast(entry))
+        asyncio.ensure_future(self.broadcast(entry))
         entry.update(time=int(time.time()))
 
         if not text.startswith('!admin'):
@@ -277,7 +301,7 @@ class GameController(object):
                 self.chat_scrollback = self.chat_scrollback[1:]
 
         logger.info('Chat: {}: {}'.format(player['name'], text))
-        asyncio.async(self.trivia.chat(ws, player, text))
+        asyncio.ensure_future(self.trivia.chat(ws, player, text))
 
 
 class AdminCommand(object):
@@ -313,4 +337,4 @@ class AdminCommand(object):
 
     def start(self, *args):
         """If game is locked, only this will start it again."""
-        self.game.timeout = asyncio.async(self.game.delay_new_round(new_round=True))
+        self.game.timeout = asyncio.ensure_future(self.game.delay_new_round(new_round=True))

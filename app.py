@@ -21,12 +21,11 @@ game = GameController()
 MAX_MSG_SIZE = 2 ** 10  # 1kb
 
 
-@asyncio.coroutine
-def game_handle(ws, data):
+async def game_handle(ws, data):
     keys = data.keys()
 
     if 'ping' in keys and ws.open:
-        asyncio.async(send(ws, {'pong': data.get('ping')}))
+        asyncio.ensure_future(send(ws, {'pong': data.get('ping')}))
 
     if 'command' in keys:
         game.command(ws, data.get('command'), data.get('args', None))
@@ -35,41 +34,36 @@ def game_handle(ws, data):
         game.chat(ws, data.get('text'))
 
 
-@asyncio.coroutine
-def handler(ws, path):
+async def handler(ws, path):
     game.join(ws)
-    while True:
-        message = yield from ws.recv()
-        if message is None:
-            game.leave(ws)
-            break
-        if len(message) > MAX_MSG_SIZE:
-            logger.warn("Discarding message: Too long: {}".format(len(message)))
-            continue
-        try:
-            data = json.loads(message)
-        except ValueError:
-            logger.warn("Discarding message: Invalid format: {}".format(message[:100]))
-            continue
-        asyncio.async(game_handle(ws, data))
+    try:
+        while True:
+            message = await ws.recv()
+            if len(message) > MAX_MSG_SIZE:
+                logger.warn("Discarding message: Too long: {}".format(len(message)))
+                continue
+            try:
+                data = json.loads(message)
+            except ValueError:
+                logger.warn("Discarding message: Invalid format: {}".format(message[:100]))
+                continue
+            asyncio.ensure_future(game_handle(ws, data))
 
-        if 'ping' not in data:
-            yield from asyncio.sleep(0.25)  # message throttling
+            if 'ping' not in data:
+                await asyncio.sleep(0.25)  # message throttling
+    finally:
+        game.leave(ws)
 
 
-@asyncio.coroutine
-def send(ws, message):
+async def send(ws, message):
     message = json.dumps(message)
-    if ws.open:
-        yield from ws.send(message)
+    await ws.send(message)
 
 
-@asyncio.coroutine
-def broadcast(message):
+async def broadcast(message):
     message = json.dumps(message)
     for ws in game.clients:
-        if ws.open:
-            yield from ws.send(message)
+        await ws.send(message)
 
 
 if __name__ == '__main__':
