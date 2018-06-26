@@ -229,7 +229,7 @@ var specialCommands = {
 };
 
 function chatFormSubmit(text) {
-    if (text.search(/^!|\//) === 0) {
+    if (text.search(/^!|\/|\./) === 0) {
         var parts = text.substring(1).split(' ');
         if (specialCommands.hasOwnProperty(parts[0])) {
             parts = specialCommands[parts[0]];
@@ -304,10 +304,7 @@ function chatMessage(opts) {
     }
 
     chat.appendChild(message);
-
-    if (window.innerHeight < 500 || chat.scrollHeight - chat.scrollTop < 500) {
-        chat.scrollTop = chat.scrollHeight;
-    }
+    chat.scrollTop = chat.scrollHeight;
     if (chat.childElementCount > 100) {
         chat.removeChild(chat.childNodes[0]);
     }

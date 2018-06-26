@@ -31,19 +31,20 @@ class GameController(object):
 
     HELP = {
         '': [
-            "Available commands:", 
-            "*/help* - This text.", 
+            "Available commands:",
+            "*/help* - This text.",
             "*/start* - Start a new round.",
-            "*/hint* - Request a hint.", 
+            "*/hint* - Request a hint.",
+            "*/vote* - Rate a question after a round.",
             "*/next* - Skip to next question.",
-            "*/login* - Change nick or password.", 
+            "*/login* - Change nick or password.",
             "*/info* - More info about trivia.ju.io",
             "Use /help _<command>_ for more info.",
-            "All commands may also be prefixed with *!* instead of a slash */*.",
+            "All commands may also be prefixed with *!* or a dot *.* instead of a slash */*.",
         ],
         'vote': [
-            "*/vote* - Rate a question after a round.",
-            "Use */++* or */--* to leave a positive of negative rating respectively.",
+            "*/vote <up|down>* - Rate a question after a round.",
+            "Use */++ /good* or */-- /bad* to leave a positive or negative rating respectively.",
         ],
         'start': [
             "*/start* Start a new round of Trivia.",
@@ -56,7 +57,7 @@ class GameController(object):
             "Only possible if you have a streak of at least 5.",
         ],
         'login': [
-            "*/login* _<nick>_ or */login* password <password>_", 
+            "*/login* _<nick>_ or */login* password <password>_",
             "You may change your player name with this.",
             "If you change your password, you will need to enter it again the next time you log in.",
         ],
@@ -187,6 +188,10 @@ class GameController(object):
         asyncio.ensure_future(self.send(ws, [{'system': line} for line in infotext]))
 
     def vote(self, ws, player_vote, *args, **kwargs):
+        if player_vote in ('up', '+'):
+            player_vote = 1
+        elif player_vote in ('down', '-'):
+            player_vote = -1
         if player_vote in (-1, 1):
             try:
                 player_name = self.players[ws]['name']
@@ -217,7 +222,7 @@ class GameController(object):
         Skip the current waiting time and go directly to the next question.
 
         """
-        if self.trivia.state == TriviaGame.STATE_WAITING and self.trivia.has_streak(self.players[ws]['name']) and \
+        if self.trivia.state == TriviaGame.STATE_WAITING and self.trivia.has_streak(self.players[ws]) and \
            time.time() - self.trivia.timer_start > self.trivia.WAIT_TIME_MIN:
                 self.trivia.next_round()
 
