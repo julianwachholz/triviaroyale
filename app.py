@@ -38,7 +38,10 @@ async def handler(ws, path):
     game.join(ws)
     try:
         while True:
-            message = await ws.recv()
+            try:
+                message = await ws.recv()
+            except websockets.exceptions.ConnectionClosed:
+                break
             if len(message) > MAX_MSG_SIZE:
                 logger.warn("Discarding message: Too long: {}".format(len(message)))
                 continue
