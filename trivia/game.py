@@ -21,8 +21,8 @@ class TriviaGame(object):
     STATE_WAITING = 'waiting'
     STATE_LOCKED = 'locked'
 
-    ROUND_TIME = 60.0
-    WAIT_TIME = 10.0
+    ROUND_TIME = 45.0
+    WAIT_TIME = 15.0
     WAIT_TIME_NEW_ROUND = 10.0
     WAIT_TIME_MIN = 2.5
     WAIT_TIME_EXTRA = 20.0  # When showing additional info after a round
@@ -30,7 +30,7 @@ class TriviaGame(object):
 
     STREAK_STEPS = 5
     HINT_TIMING = 10.0
-    HINT_COOLDOWN = 2.5
+    HINT_COOLDOWN = 1.0
     HINT_MAX = 3
 
     def __init__(self, broadcast, send):
