@@ -136,7 +136,12 @@ window.showModal = function(modalId, data) {
     switch (modalId) {
         case 'welcome':
             modalcommand.value = 'login';
-            modaltext.innerHTML = '<h2>Welcome to Trivia!</h2><p>Please choose your player name below.</p>';
+            var text = '<h2>Welcome to Trivia!</h2>';
+            text += '<p>In this game, you play rounds of trivia questions against other players.';
+            text += 'The first to correctly enter the answer in the chat wins the round!</p>';
+            text += '<p>Enter commands in the chat by starting a line with a dot or exclamation point, e.g. <kbd>!help</kbd></p>'
+            text += '<p>Please choose your player name below.</p>';
+            modaltext.innerHTML = text;
             modalinputs.innerHTML = '<div class="form-input">' +
                     '<input type="text" name="login" id="login" maxlength="30" autofocus required>' +
                     '<label for="login">Nickname</label></div>';
@@ -161,20 +166,20 @@ window.showModal = function(modalId, data) {
             }
             modalcommand.value = 'login';
             if (!!data.auto) {
-                modaltext.innerHTML = '<h2>Password required</h2><p>Enter password for '+escapeHTML(data.login)+':</p>';
+                modaltext.innerHTML = '<h2>Welcome back!</h2><p>Please enter password for '+escapeHTML(data.login)+':</p>';
                 modalsubmit.innerHTML = 'Login';
                 modalcancel.classList.add('hidden');
             } else {
-                modaltext.innerHTML = '<h2>Change your password</h2>';
-                modalsubmit.innerHTML = 'Change password';
+                modaltext.innerHTML = '<h2>' + (!!data.auto ? 'Change' : 'Set') + ' your password</h2>';
+                modalsubmit.innerHTML = (!!data.auto ? 'Change' : 'Set') + ' password';
                 modalcancel.classList.remove('hidden');
             }
             modalinputs.innerHTML = '<div class="form-input">' +
                     '<input type="'+(!!data.auto ? 'password' : 'text')+' " name="password" id="password" '+(!!data.auto ? 'autofocus' : '')+' required>' +
-                    '<label for="password">'+(!!data.auto ? '' : 'New')+' Password</label></div>' +
+                    '<label for="password">Password</label></div>' +
                     '<div class="form-checkbox">' +
                         '<input type="checkbox" name="rememberme" id="rememberme">' +
-                        '<label for="rememberme">Save password?</label>' +
+                        '<label for="rememberme">Remember password?</label>' +
                     '</div>' +
                     '<input type="hidden" name="login" value="' + escapeHTML(data.login) + '">';
             break;
@@ -226,6 +231,7 @@ var specialCommands = {
     'good': ['vote', 1],
     'bad': ['vote', -1],
     'h': ['hint'],
+    'n': ['next'],
 };
 
 function chatFormSubmit(text) {
