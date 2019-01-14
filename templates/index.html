@@ -9,13 +9,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#009688">
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,300,500">
-  <link rel="stylesheet" href="/static/css/style.css?v2.2">
+  <link rel="stylesheet" href="/static/css/style.css?v2.3">
   <link rel="stylesheet" href="/static/css/vendor.css?v2.2">
 </head>
 <body id="body" class="hidden">
   <header class="page-header z1">
     <h1>Trivia</h1>
-    <a id="menu" class="menu-trigger" href="#aside">
+    <a id="menu" class="menu-trigger" href="#aside" title="Open / close menu">
       <svg width="100%" height="100%" viewBox="0 0 10 10">
         <path d="M0,1 10,1" stroke="#444" stroke-width="2" />
         <path d="M0,5 10,5" stroke="#444" stroke-width="2" />
@@ -66,6 +66,10 @@
       </div>
     </footer>
   </aside>
+
+  <div id="sidebarnag" class="z1 hidden">
+    Show statistics and more options!
+  </div>
 
   <div id="modal" class="page-overlay page-modal hidden">
     <div id="modalcontent" class="modal-content z3">

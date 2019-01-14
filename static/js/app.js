@@ -38,6 +38,7 @@ ws.addEventListener('open', function (event) {
         }
     } else {
         window.showModal('welcome');
+        sidebarnag.classList.remove('hidden');
     }
 });
 ws.addEventListener('connecting', function (event) {
@@ -435,6 +436,7 @@ document.addEventListener('DOMContentLoaded', function () {
     menu.addEventListener('click', function (event) {
         event.preventDefault();
         aside.classList.toggle('open');
+        sidebarnag.classList.add('hidden');
     });
     menu_close.addEventListener('click', function (event) {
         event.preventDefault();

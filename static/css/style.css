@@ -36,6 +36,25 @@ body {
   font: normal 400 28px/2 "Roboto", sans-serif;
 }
 
+#sidebarnag {
+  position: absolute;
+  top: 60px;
+  right: 7px;
+  color: #cfd8dc;
+  background: rgba(0,0,0,.75);
+  border-radius: 2px;
+  padding: 4px 6px;
+}
+#sidebarnag::after {
+  content: "";
+  position: absolute;
+  top: -16px;
+  right: 8px;
+  display: block;
+  border: 8px solid transparent;
+  border-bottom-color: rgba(0,0,0,.75);
+}
+
 .hidden {
   display: none;
 }
