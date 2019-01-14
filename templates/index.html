@@ -11,6 +11,19 @@
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,300,500">
   <link rel="stylesheet" href="/static/css/style.css?v2.3">
   <link rel="stylesheet" href="/static/css/vendor.css?v2.2">
+  <script type="text/javascript">
+    var _paq = _paq || [];
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="https://a.ju.io/";
+      _paq.push(['setTrackerUrl', u+'piwik.php']);
+      _paq.push(['setSiteId', '2']);
+      _paq.push(['enableHeartBeatTimer']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+    })();
+  </script>
 </head>
 <body id="body" class="hidden">
   <header class="page-header z1">
@@ -90,18 +103,6 @@
   var WS_ADDR = '{{ WS_ADDR }}';
   </script>
   <script src="/static/reconnecting-websocket.min.js"></script>
-  <script src="/static/js/app.js?v2.2"></script>
-  <script type="text/javascript">
-    var _paq = _paq || [];
-    _paq.push(['trackPageView']);
-    _paq.push(['enableLinkTracking']);
-    (function() {
-      var u="//a.ju.io/";
-      _paq.push(['setTrackerUrl', u+'piwik.php']);
-      _paq.push(['setSiteId', '2']);
-      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
-    })();
-  </script>
+  <script src="/static/js/app.js?v2.3"></script>
 </body>
 </html>

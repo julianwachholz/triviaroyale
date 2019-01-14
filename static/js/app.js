@@ -18,6 +18,7 @@ ws.addEventListener('open', function (event) {
     var playername, password;
 
     pagestatus.innerHTML = '<p>Connected! :)</p>';
+    _paq.push(['trackEvent', 'Connection', 'Connected']);
 
     setTimeout(function () {
         pagestatus.classList.add('hidden');
@@ -33,12 +34,15 @@ ws.addEventListener('open', function (event) {
                 password: password,
                 auto: true
             });
+            _paq.push(['trackEvent', 'Game', 'Login', 'LoginWithSavedPassword']);
         } else {
             command('login', {login: playername});
+            _paq.push(['trackEvent', 'Game', 'Login', 'LoginWithoutPassword']);
         }
     } else {
         window.showModal('welcome');
         sidebarnag.classList.remove('hidden');
+        _paq.push(['trackEvent', 'Game', 'Login', 'NewPlayer']);
     }
 });
 ws.addEventListener('connecting', function (event) {
@@ -49,6 +53,7 @@ ws.addEventListener('close', function (event) {
     pagestatus.innerHTML = '<p>Connection lost! :(</p>';
     clearTimeout(pingTimeout);
     clearTimeout(timerTimeout);
+    _paq.push(['trackEvent', 'Connection', 'Disconnected']);
 });
 ws.addEventListener('message', function (message) {
     var data = JSON.parse(message.data);
@@ -97,6 +102,7 @@ function handleMessage(data) {
                 localStorage.setItem('playername', data.setinfo[key]);
                 chatinput.disabled = false;
                 chatinput.focus();
+                _paq.push(['trackEvent', 'Game', 'Login', 'LoginSuccessful']);
             }
             if (key === 'timer') {
                 animateTimer();
@@ -148,6 +154,7 @@ window.showModal = function(modalId, data) {
                     '<label for="login">Nickname</label></div>';
             modalcancel.classList.add('hidden');
             modalsubmit.innerHTML = 'Login';
+            _paq.push(['trackEvent', 'Modal', 'Welcome']);
             break;
 
         case 'login':
@@ -158,6 +165,7 @@ window.showModal = function(modalId, data) {
                     '<label for="login">Nickname</label></div>';
             modalcancel.classList.remove('hidden');
             modalsubmit.innerHTML = 'Change name';
+            _paq.push(['trackEvent', 'Modal', 'ChangeName']);
             break;
 
         case 'password':
@@ -170,10 +178,12 @@ window.showModal = function(modalId, data) {
                 modaltext.innerHTML = '<h2>Welcome back!</h2><p>Please enter password for '+escapeHTML(data.login)+':</p>';
                 modalsubmit.innerHTML = 'Login';
                 modalcancel.classList.add('hidden');
+                _paq.push(['trackEvent', 'Game', 'Login', 'LoginPasswordPrompt'])
             } else {
                 modaltext.innerHTML = '<h2>' + (!!data.auto ? 'Change' : 'Set') + ' your password</h2>';
                 modalsubmit.innerHTML = (!!data.auto ? 'Change' : 'Set') + ' password';
                 modalcancel.classList.remove('hidden');
+                _paq.push(['trackEvent', 'Modal', 'ChangePassword'])
             }
             modalinputs.innerHTML = '<div class="form-input">' +
                     '<input type="'+(!!data.auto ? 'password' : 'text')+' " name="password" id="password" '+(!!data.auto ? 'autofocus' : '')+' required>' +
@@ -195,6 +205,7 @@ window.showModal = function(modalId, data) {
             }, function (error) {
                 modaltext.innerHTML = '<h2 class="error">Error</h2><p class="error">' + error + '</p>';
             });
+            _paq.push(['trackEvent', 'Modal', 'Ajax', data]);
             break;
 
         default:
@@ -219,6 +230,7 @@ window.ajaxForm = function (event, form) {
     }, function (error) {
         modaltext.innerHTML = '<h2 class="error">Error</h2><p class="error">' + error + '</p>';
     });
+    _paq.push(['trackEvent', 'Modal', 'AjaxForm', form.action]);
 };
 
 
@@ -244,6 +256,7 @@ function chatFormSubmit(text) {
         command(parts[0], parts.slice(1));
     } else {
         ws.send(JSON.stringify({text: text}));
+        _paq.push(['trackEvent', 'Game', 'Chat']);
     }
 }
 
@@ -251,6 +264,7 @@ function command(cmd, args) {
     ws.send(JSON.stringify({
         command: cmd, args: args
     }));
+    _paq.push(['trackEvent', 'Game', 'Command', cmd]);
 }
 window.command = command;
 
@@ -408,6 +422,7 @@ function inputHistory(max_history) {
                 history[current] = this.value;
                 current += 1;
                 this.value = history[current];
+                _paq.push(['trackEvent', 'Game', 'ChatHistory'])
             }
             break;
 
@@ -417,6 +432,7 @@ function inputHistory(max_history) {
                 history[current] = this.value;
                 current -= 1;
                 this.value = history[current];
+                _paq.push(['trackEvent', 'Game', 'ChatHistory'])
             }
             break;
         }
@@ -437,6 +453,7 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         aside.classList.toggle('open');
         sidebarnag.classList.add('hidden');
+        _paq.push(['trackEvent', 'OpenSidebar']);
     });
     menu_close.addEventListener('click', function (event) {
         event.preventDefault();
