@@ -1,12 +1,40 @@
 import asyncio
 import time
+import os
 import logging
+
+import requests
 
 from trivia.game import TriviaGame
 from trivia.models import Player, db_session, commit
 
 
 logger = logging.getLogger(__name__)
+
+
+last_notified = None
+
+
+def send_pushbullet(message):
+    api_key = os.getenv('PUSHBULLET_API_KEY')
+    if api_key is not None:
+        url = f'https://api.pushbullet.com/v2/pushes'
+        requests.post(url, {
+            'type': 'note',
+            'title': 'trivia.ju.io',
+            'body': message,
+        }, auth=(api_key, ''))
+
+
+async def notify_online_player(name):
+    """Send a PushBullet notification that a player is online."""
+    global last_notified
+
+    delay = 60 * 15  # 15 minutes
+    if last_notified is None or last_notified + delay < time.time():
+        logger.info(f'Notifying admin about new player online: {name}.')
+        send_pushbullet(f'Player {name} is now online!')
+        last_notified = time.time()
 
 
 class GameController(object):
@@ -110,6 +138,7 @@ class GameController(object):
                 'setinfo': self._get_player_info(),
             }))
             logger.info('Join: {} (#{})'.format(name, player_id))
+            asyncio.ensure_future(notify_online_player(name))
         else:
             asyncio.ensure_future(self.broadcast({
                 'system': "{} is now known as *{}*.".format(old_name, name),
