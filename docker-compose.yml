@@ -1,0 +1,28 @@
+version: "3"
+services:
+  web:
+    image: trivia
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file: .env
+    ports:
+      - 8060:8000
+      - 8061:8080
+    restart: "no"
+
+  api:
+    image: trivia
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: python app.py
+    env_file: .env
+    ports:
+      - 8180:8180
+    restart: "no"
+
+networks:
+  default:
+    external:
+      name: db
