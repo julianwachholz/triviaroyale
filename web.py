@@ -7,6 +7,7 @@ import os
 from flask import Flask, abort, redirect, render_template, request, url_for
 from pony.orm import count, db_session, left_join
 from raven.contrib.flask import Sentry
+
 from trivia.helpers import format_number, get_week_tuple, timesince
 from trivia.models import Player, db
 
@@ -118,11 +119,11 @@ def url_for_highscore(mode, dt):
 
     if mode == "week":
         if (
-            EARLIEST_DATE.isocalendar()[1]
-            <= dt.isocalendar()[1]
-            <= now.isocalendar()[1]
+            EARLIEST_DATE.year <= dt.year < now.year
+            or dt.isocalendar()[1] <= now.isocalendar()[1]
         ):
-            return url_for("highscores", year=dt.year, week=dt.isocalendar()[1])
+            cal = dt.isocalendar()
+            return url_for("highscores", year=cal[0], week=cal[1])
         else:
             return None
 
@@ -185,7 +186,7 @@ def highscores(year=None, month=None, day=None, week=None):
             datetime.date(year, 1, 1) + datetime.timedelta(weeks=week - 1)
         )
         f = lambda: r.start_time >= dt and r.start_time <= dt_week_end
-        title = "Week {}, {}".format(dt.isocalendar()[1], dt.year)
+        title = "Week {}, {}".format(dt.isocalendar()[1], dt.isocalendar()[0])
 
         end_fmt = " - %B %d" if dt.month != dt_week_end.month else "-%d"
         subtitle = " ({}{})".format(dt.strftime("%B %d"), dt_week_end.strftime(end_fmt))
