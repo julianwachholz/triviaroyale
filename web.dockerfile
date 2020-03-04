@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.7-alpine as build
 
 WORKDIR /app
 
@@ -22,4 +22,8 @@ COPY . /app
 
 RUN make
 
-CMD [ "uwsgi", "--ini=/app/config/uwsgi.ini" ]
+FROM build as dev
+CMD python web.py
+
+FROM build as prod
+CMD uwsgi --ini=/app/config/uwsgi.ini
