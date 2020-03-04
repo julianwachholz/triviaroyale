@@ -63,7 +63,7 @@
       <label for="dt">Select Day</label></div>
     {% endif %}
     {% if mode == 'week' %}
-      <input type="week" name="dt" id="dt" value="{{ dt.year }}-W{{ dt.isocalendar().1 }}" min="2015-W12" max="{{ today.year }}-W{{ today.isocalendar().1 }}" required>
+      <input type="week" name="dt" id="dt" value="{{ dt.year }}-W{{ '%02d'|format(dt.isocalendar().1) }}" min="2015-W12" max="{{ today.year }}-W{{ '%02d'|format(today.isocalendar().1) }}" required>
       <label for="dt">Select Week</label></div>
     {% endif %}
     {% if mode == 'month' %}
