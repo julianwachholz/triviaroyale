@@ -437,10 +437,10 @@
       (function countdown() {
         var s = (timeEnd - new Date()) / 1000;
         if (s > 0 && timer.childNodes.length) {
-          timerValue.innerHTML = s.toFixed(1);
+          timerValue.innerHTML = s.toFixed(0);
           timerTimeout = setTimeout(countdown, timeout * 1000);
         } else {
-          timerValue.innerHTML = "0.0";
+          timerValue.innerHTML = "0";
         }
       })();
 
