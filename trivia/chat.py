@@ -30,25 +30,24 @@ GOOD_PLACE = {
 }
 
 
-def send_pushbullet(message):
-    api_key = os.getenv("PUSHBULLET_API_KEY")
-    if api_key is not None:
-        url = f"https://api.pushbullet.com/v2/pushes"
+def send_pushover(message):
+    app_token = os.getenv("PUSHOVER_APP_TOKEN")
+    user_token = os.getenv("PUSHOVER_USER_TOKEN")
+    if app_token is not None and user_token is not None:
+        logger.info(f"Notifying admin: {message}.")
+        url = f"https://api.pushover.net/1/messages.json"
         requests.post(
-            url,
-            {"type": "note", "title": "trivia.ju.io", "body": message},
-            auth=(api_key, ""),
+            url, data={"token": app_token, "user": user_token, "message": message},
         )
 
 
 async def notify_online_player(name):
-    """Send a PushBullet notification that a player is online."""
+    """Send a Pushover notification that a player is online."""
     global last_notified
 
     delay = 60 * 15  # 15 minutes
     if last_notified is None or last_notified + delay < time.time():
-        logger.info(f"Notifying admin about new player online: {name}.")
-        send_pushbullet(f"Player {name} is now online!")
+        send_pushover(f"Player {name} is now online!")
         last_notified = time.time()
 
 
