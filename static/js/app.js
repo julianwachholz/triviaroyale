@@ -16,9 +16,7 @@
 
   ws.addEventListener("open", function (event) {
     var playername, password;
-
     pagestatus.innerHTML = "<p>Connected! :)</p>";
-    _paq.push(["trackEvent", "Connection", "Connected"]);
 
     setTimeout(function () {
       pagestatus.classList.add("hidden");
@@ -98,7 +96,7 @@
             data.setinfo[key]
           );
         } else {
-        document.getElementById(key).innerHTML = data.setinfo[key];
+          document.getElementById(key).innerHTML = data.setinfo[key];
         }
 
         if (key === "playername") {
@@ -171,7 +169,6 @@
           '<label for="login">Nickname</label></div>';
         modalcancel.classList.add("hidden");
         modalsubmit.innerHTML = "Login";
-        _paq.push(["trackEvent", "Modal", "Welcome"]);
         break;
 
       case "login":
@@ -236,13 +233,16 @@
           null,
           function (result) {
             modaltext.innerHTML = result;
+            var title = result.match(/<h2>(.*?)<\/h2>/);
+            _paq.push(["setCustomUrl", data]);
+            _paq.push(["setDocumentTitle", title ? title[1] : data]);
+            _paq.push(["trackPageView"]);
           },
           function (error) {
             modaltext.innerHTML =
               '<h2 class="error">Error</h2><p class="error">' + error + "</p>";
           }
         );
-        _paq.push(["trackEvent", "Modal", "Ajax", data]);
         break;
 
       default:
@@ -299,7 +299,6 @@
       command(parts[0], parts.slice(1));
     } else {
       ws.send(JSON.stringify({ text: text }));
-      _paq.push(["trackEvent", "Game", "Chat"]);
     }
   }
 
@@ -595,6 +594,9 @@
       modalTimeout = setTimeout(function () {
         modal.classList.add("hidden");
       }, 200);
+      _paq.push(["setCustomUrl", "/"]);
+      _paq.push(["setDocumentTitle", "Trivia"]);
+      _paq.push(["trackPageView"]);
     };
     modalcancel.addEventListener("click", modalCancelFn);
     modalclose.addEventListener("click", modalCancelFn);
