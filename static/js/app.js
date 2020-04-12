@@ -93,7 +93,13 @@
           continue;
         }
 
+        if (key === "playername") {
+          document.getElementById(key).innerHTML = escapeHTML(
+            data.setinfo[key]
+          );
+        } else {
         document.getElementById(key).innerHTML = data.setinfo[key];
+        }
 
         if (key === "playername") {
           // logged in successfully
@@ -134,9 +140,9 @@
     for (i = 0; i < players.length; i += 1) {
       html +=
         "<li><a onclick=\"showModal('ajax', '/stats/user/?name=" +
-        players[i] +
+        encodeURIComponent(players[i]) +
         "')\">" +
-        players[i] +
+        escapeHTML(players[i]) +
         "</a></li>";
     }
     playerlist.innerHTML = html;
