@@ -155,12 +155,13 @@
       case "welcome":
         modalcommand.value = "login";
         var text = "<h2>Welcome to Trivia!</h2>";
-        text +=
-          "<p>In this game, you play rounds of trivia questions against other players.";
+        text += "<p>Play rounds of trivia questions against other players.";
         text +=
           "The first to correctly enter the answer in the chat wins the round!</p>";
         text +=
-          "<p>Enter commands in the chat by starting a line with a dot or exclamation point, e.g. <kbd>!help</kbd></p>";
+          "<p>Be square, play fair: No cheating by looking up answers elsewhere!</p>";
+        text +=
+          "<p>Read the full rules by entering the <kbd>/rules</kbd> command. Enter <kbd>/help</kbd> for more.</p>";
         text += "<p>Please choose your player name below.</p>";
         modaltext.innerHTML = text;
         modalinputs.innerHTML =
@@ -168,7 +169,7 @@
           '<input type="text" name="login" id="login" maxlength="30" autofocus required>' +
           '<label for="login">Nickname</label></div>';
         modalcancel.classList.add("hidden");
-        modalsubmit.innerHTML = "Login";
+        modalsubmit.innerHTML = "Play now!";
         break;
 
       case "login":

@@ -87,6 +87,7 @@ class GameController(object):
             "Use /help _<command>_ for more info.",
             "All commands may also be prefixed with *!* or a dot *.* instead of a slash */*.",
         ],
+        "rules": ["*/rules* - Read the game rules.",],
         "vote": [
             "*/vote <up|down>* - Rate a question after a round.",
             "Use */++ /good* or */-- /bad* to leave a positive or negative rating respectively.",
@@ -96,7 +97,7 @@ class GameController(object):
             "*/hint* Request a new hint for the current question, if possible. Shorthand: */h*",
         ],
         "next": [
-            "*/next* Skip the current waiting time between rounds.",
+            "*/next* Skip the current waiting time between rounds. (Shorthand: */n*)",
             "Only possible if you have a streak of at least 5.",
         ],
         "login": [
@@ -254,6 +255,18 @@ class GameController(object):
         else:
             helptext = self.HELP.get(args[0], ["Unknown command."])
         asyncio.ensure_future(self.send(ws, [{"system": line} for line in helptext]))
+
+    def rules(self, ws, *args, **kwargs):
+        rules = [
+            "*Game Rules*",
+            "1. The first player to answer the current question correctly wins the round. The faster the answer, \
+                the more points will be awarded.",
+            "2. Collect bonus points by using fewer hints and answering multiple questions correctly in a row.",
+            "3. Play honestly and fair, no cheating by looking up answers on Google, Wikipedia etc. or any other medium.\
+                This is not a contest on who googles the quickest.",
+            "4. Be nice, don't swear or be rude. Site bans will be applied if required.",
+        ]
+        asyncio.ensure_future(self.send(ws, [{"system": line} for line in rules]))
 
     def info(self, ws, *args, **kwargs):
         infotext = [
