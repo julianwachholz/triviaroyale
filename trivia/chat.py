@@ -1,9 +1,11 @@
 import asyncio
 import logging
 import os
+import re
 import time
 
 import requests
+
 from trivia.game import TriviaGame
 from trivia.models import Player, commit, db_session
 
@@ -13,15 +15,30 @@ logger = logging.getLogger(__name__)
 last_notified = None
 
 
+GOOD_PLACE = {
+    re.compile(search): repl
+    for search, repl in (
+        {
+            r"\b(mother)?fuck(ers?|s|ed|ing)?\b": r"\1fork\2",
+            r"\b(bull)?shit(s|ting)?\b": r"\1shirt\2",
+            r"\bbitch(es)?\b": r"bench\1",
+            r"\bass(holes?)?\b": r"ash\1",
+            r"\bcock(s|suckers?)?\b": r"cork\1",
+            r"\bdick(s|heads?)?\b": r"dink\1",
+        }
+    ).items()
+}
+
+
 def send_pushbullet(message):
-    api_key = os.getenv('PUSHBULLET_API_KEY')
+    api_key = os.getenv("PUSHBULLET_API_KEY")
     if api_key is not None:
-        url = f'https://api.pushbullet.com/v2/pushes'
-        requests.post(url, {
-            'type': 'note',
-            'title': 'trivia.ju.io',
-            'body': message,
-        }, auth=(api_key, ''))
+        url = f"https://api.pushbullet.com/v2/pushes"
+        requests.post(
+            url,
+            {"type": "note", "title": "trivia.ju.io", "body": message},
+            auth=(api_key, ""),
+        )
 
 
 async def notify_online_player(name):
@@ -30,8 +47,8 @@ async def notify_online_player(name):
 
     delay = 60 * 15  # 15 minutes
     if last_notified is None or last_notified + delay < time.time():
-        logger.info(f'Notifying admin about new player online: {name}.')
-        send_pushbullet(f'Player {name} is now online!')
+        logger.info(f"Notifying admin about new player online: {name}.")
+        send_pushbullet(f"Player {name} is now online!")
         last_notified = time.time()
 
 
@@ -42,23 +59,26 @@ class GameController(object):
     Login/passwords and chat interaction goes through this.
 
     """
+
     CHAT_SCROLLBACK = 50
 
     COMMANDS = [
-        'help',
-        'login',
-        'admin',
-        'vote',
-        'start',
-        'hint',
-        'next',
-        'info',
+        "help",
+        "rules",
+        "login",
+        "admin",
+        "vote",
+        "start",
+        "hint",
+        "next",
+        "info",
     ]
 
     HELP = {
-        '': [
+        "": [
             "Available commands:",
             "*/help* - This text.",
+            "*/rules* - Read the rules.",
             "*/start* - Start a new round.",
             "*/hint* - Request a hint.",
             "*/vote* - Rate a question after a round.",
@@ -68,21 +88,19 @@ class GameController(object):
             "Use /help _<command>_ for more info.",
             "All commands may also be prefixed with *!* or a dot *.* instead of a slash */*.",
         ],
-        'vote': [
+        "vote": [
             "*/vote <up|down>* - Rate a question after a round.",
             "Use */++ /good* or */-- /bad* to leave a positive or negative rating respectively.",
         ],
-        'start': [
-            "*/start* Start a new round of Trivia.",
-        ],
-        'hint': [
+        "start": ["*/start* Start a new round of Trivia."],
+        "hint": [
             "*/hint* Request a new hint for the current question, if possible. Shorthand: */h*",
         ],
-        'next': [
+        "next": [
             "*/next* Skip the current waiting time between rounds.",
             "Only possible if you have a streak of at least 5.",
         ],
-        'login': [
+        "login": [
             "*/login* _<nick>_ or */login* password <password>_",
             "You may change your player name with this.",
             "If you change your password, you will need to enter it again the next time you log in.",
@@ -118,72 +136,95 @@ class GameController(object):
                 player = self.players[ws]
                 del self.players[ws]
                 self.trivia.player_count -= 1
-                asyncio.ensure_future(self.broadcast({
-                    'system': "{} left.".format(player['name']),
-                    'setinfo': self._get_player_info(),
-                }))
-                logger.info('Leave: {} (#{})'.format(player['name'], player['id']))
+                asyncio.ensure_future(
+                    self.broadcast(
+                        {
+                            "system": "{} left.".format(player["name"]),
+                            "setinfo": self._get_player_info(),
+                        }
+                    )
+                )
+                logger.info("Leave: {} (#{})".format(player["name"], player["id"]))
             self.clients.remove(ws)
 
     def _set_name(self, ws, player_id, name, old_name=None):
-        asyncio.ensure_future(self.send(ws, {'setinfo': {
-            'playername': name,
-        }}))
+        asyncio.ensure_future(self.send(ws, {"setinfo": {"playername": name}}))
         if old_name is None:
             self.trivia.player_count += 1
-            asyncio.ensure_future(self.broadcast({
-                'system': "{} joined.".format(name),
-                'setinfo': self._get_player_info(),
-            }))
-            logger.info('Join: {} (#{})'.format(name, player_id))
+            asyncio.ensure_future(
+                self.broadcast(
+                    {
+                        "system": "{} joined.".format(name),
+                        "setinfo": self._get_player_info(),
+                    }
+                )
+            )
+            logger.info("Join: {} (#{})".format(name, player_id))
             asyncio.ensure_future(notify_online_player(name))
         else:
-            asyncio.ensure_future(self.broadcast({
-                'system': "{} is now known as *{}*.".format(old_name, name),
-                'setinfo': self._get_player_info(),
-            }))
-            logger.info('Rename: {} to {} (#{})'.format(name, old_name, player_id))
+            asyncio.ensure_future(
+                self.broadcast(
+                    {
+                        "system": "{} is now known as *{}*.".format(old_name, name),
+                        "setinfo": self._get_player_info(),
+                    }
+                )
+            )
+            logger.info("Rename: {} to {} (#{})".format(name, old_name, player_id))
 
     def _rename_player(self, ws, new_name):
         player = self.players[ws]
 
-        if player['name'] == new_name:
-            asyncio.ensure_future(self.send(ws, {
-                'system': 'You are already known as *{}*.'.format(new_name),
-            }))
+        if player["name"] == new_name:
+            asyncio.ensure_future(
+                self.send(
+                    ws, {"system": "You are already known as *{}*.".format(new_name)}
+                )
+            )
         else:
             with db_session():
                 if Player.exists(lambda p: p.name == new_name):
-                    asyncio.ensure_future(self.send(ws, {
-                        'system': 'This name is not available: *{}*.'.format(new_name),
-                    }))
+                    asyncio.ensure_future(
+                        self.send(
+                            ws,
+                            {
+                                "system": "This name is not available: *{}*.".format(
+                                    new_name
+                                ),
+                            },
+                        )
+                    )
                 else:
-                    old_name = player['name']
-                    player['name'] = new_name
-                    Player[player['id']].set(name=new_name)
-                    self._set_name(ws, player['id'], new_name, old_name=old_name)
+                    old_name = player["name"]
+                    player["name"] = new_name
+                    Player[player["id"]].set(name=new_name)
+                    self._set_name(ws, player["id"], new_name, old_name=old_name)
 
     def _get_player_info(self):
-        players = sorted(self.players.values(), key=lambda p: p['joined'])
+        players = sorted(self.players.values(), key=lambda p: p["joined"])
         count = len(self.players)
         return {
-            'playercount': '{} Player{}'.format(count, 's' if count != 1 else ''),
-            'players': list(map(lambda player: player['name'], players)),
+            "playercount": "{} Player{}".format(count, "s" if count != 1 else ""),
+            "players": list(map(lambda player: player["name"], players)),
         }
 
     @db_session
     def _set_password(self, ws, password):
         player = self.players[ws]
-        player = Player[self.players[ws]['id']]
+        player = Player[self.players[ws]["id"]]
         player.set_password(password)
-        asyncio.ensure_future(self.send(ws, {
-            'system': 'Password successfully changed!',
-        }))
-        logger.info('Password: {} set new password.'.format(player))
+        asyncio.ensure_future(
+            self.send(ws, {"system": "Password successfully changed!"})
+        )
+        logger.info("Password: {} set new password.".format(player))
 
     def command(self, ws, command, args):
-        if command.startswith('_'):
-            logger.warn('Illegal command from {}: {} with {}'.format(self.players[ws]['name'], command, args))
+        if command.startswith("_"):
+            logger.warn(
+                "Illegal command from {}: {} with {}".format(
+                    self.players[ws]["name"], command, args
+                )
+            )
             return
 
         if command in self.COMMANDS and hasattr(self, command):
@@ -196,45 +237,60 @@ class GameController(object):
                 fun(ws, *args)
             else:
                 fun(ws, args)
-            logger.debug('Ran command from {}: {} with {}'.format(self.players[ws]['name'], command, args))
+            logger.debug(
+                "Ran command from {}: {} with {}".format(
+                    self.players[ws]["name"], command, args
+                )
+            )
         else:
-            logger.warn('Unknown command from {}: {} with {}'.format(self.players[ws]['name'], command, args))
+            logger.warn(
+                "Unknown command from {}: {} with {}".format(
+                    self.players[ws]["name"], command, args
+                )
+            )
 
     def help(self, ws, *args, **kwargs):
-        if len(args) == 0 or args[0] == 'help':
-            helptext = self.HELP['']
+        if len(args) == 0 or args[0] == "help":
+            helptext = self.HELP[""]
         else:
             helptext = self.HELP.get(args[0], ["Unknown command."])
-        asyncio.ensure_future(self.send(ws, [{'system': line} for line in helptext]))
+        asyncio.ensure_future(self.send(ws, [{"system": line} for line in helptext]))
 
     def info(self, ws, *args, **kwargs):
         infotext = [
-            'This game uses Python and asyncio under the hood.',
-            'Find out more on https://github.com/julianwachholz/trivia.ju.io',
+            "This game uses Python and asyncio under the hood.",
+            "Find out more on https://github.com/julianwachholz/trivia.ju.io",
         ]
-        asyncio.ensure_future(self.send(ws, [{'system': line} for line in infotext]))
+        asyncio.ensure_future(self.send(ws, [{"system": line} for line in infotext]))
 
     def vote(self, ws, player_vote, *args, **kwargs):
-        if player_vote in ('up', '+'):
+        if player_vote in ("up", "+"):
             player_vote = 1
-        elif player_vote in ('down', '-'):
+        elif player_vote in ("down", "-"):
             player_vote = -1
         if player_vote in (-1, 1):
             try:
-                player_name = self.players[ws]['name']
+                player_name = self.players[ws]["name"]
             except KeyError:
                 return
             if self.trivia.queue_vote(player_name, player_vote):
-                asyncio.ensure_future(self.send(ws, {'setinfo': {
-                    'question-vote': '<p class="question-vote">Thank you!</p>',
-                }}))
+                asyncio.ensure_future(
+                    self.send(
+                        ws,
+                        {
+                            "setinfo": {
+                                "question-vote": '<p class="question-vote">Thank you!</p>',
+                            }
+                        },
+                    )
+                )
 
     def start(self, ws, *args, **kwargs):
         """
         Start a new round if there is no round running yet.
 
         """
-        logger.info('Start: {}'.format(self.players[ws]['name']))
+        logger.info("Start: {}".format(self.players[ws]["name"]))
         self.trivia.timeout = asyncio.ensure_future(self.trivia.delay_new_round(True))
 
     def hint(self, ws, *args, **kwargs):
@@ -242,16 +298,19 @@ class GameController(object):
         Request a new hint if currently possible.
 
         """
-        self.trivia.get_hint(from_player=self.players[ws]['name'])
+        self.trivia.get_hint(from_player=self.players[ws]["name"])
 
     def next(self, ws, *args, **kwargs):
         """
         Skip the current waiting time and go directly to the next question.
 
         """
-        if self.trivia.state == TriviaGame.STATE_WAITING and self.trivia.has_streak(self.players[ws]) and \
-           time.time() - self.trivia.timer_start > self.trivia.WAIT_TIME_MIN:
-                self.trivia.next_round()
+        if (
+            self.trivia.state == TriviaGame.STATE_WAITING
+            and self.trivia.has_streak(self.players[ws])
+            and time.time() - self.trivia.timer_start > self.trivia.WAIT_TIME_MIN
+        ):
+            self.trivia.next_round()
 
     @db_session
     def login(self, ws, login=None, password=None, *, auto=False, **kwargs):
@@ -274,39 +333,51 @@ class GameController(object):
             commit()
         elif not player.check_password(password):
             if password is None or auto:
-                asyncio.ensure_future(self.send(ws, {
-                    'prompt': 'password',
-                    'data': {'login': login, 'auto': True},
-                }))
+                asyncio.ensure_future(
+                    self.send(
+                        ws,
+                        {"prompt": "password", "data": {"login": login, "auto": True}},
+                    )
+                )
                 return
             else:
-                asyncio.ensure_future(self.send(ws, {
-                    'system': 'Invalid username/password!',
-                    'system_extra': '<a href="#" onclick="showModal(\'password\', {{login:\'{}\'}})">'
-                                    'Try again</a>'.format(login),
-                }))
+                asyncio.ensure_future(
+                    self.send(
+                        ws,
+                        {
+                            "system": "Invalid username/password!",
+                            "system_extra": "<a href=\"#\" onclick=\"showModal('password', {{login:'{}'}})\">"
+                            "Try again</a>".format(login),
+                        },
+                    )
+                )
                 return
 
         player.logged_in()
 
         self.players[ws] = {
-            'joined': time.time(),
-            'id': player.id,
-            'name': player.name,
-            'permissions': player.permissions,
+            "joined": time.time(),
+            "id": player.id,
+            "name": player.name,
+            "permissions": player.permissions,
         }
         asyncio.ensure_future(self.send(ws, self.chat_scrollback))
         self._set_name(ws, player.id, player.name)
 
         if not player.has_password():
-            asyncio.ensure_future(self.send(ws, {
-                'system': 'You currently have no password!',
-                'system_extra': '<a href="#" onclick="showModal(\'password\', {{login:\'{}\'}})">'
-                                'click here to set a password!</a>'.format(player.name),
-            }))
+            asyncio.ensure_future(
+                self.send(
+                    ws,
+                    {
+                        "system": "You currently have no password!",
+                        "system_extra": "<a href=\"#\" onclick=\"showModal('password', {{login:'{}'}})\">"
+                        "click here to set a password!</a>".format(player.name),
+                    },
+                )
+            )
 
-        asyncio.ensure_future(self.send(ws, {'setinfo': player.get_recent_scores()}))
-        asyncio.ensure_future(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
+        asyncio.ensure_future(self.send(ws, {"setinfo": player.get_recent_scores()}))
+        asyncio.ensure_future(self.send(ws, {"setinfo": self.trivia.get_round_info()}))
 
     def admin(self, ws, *args, **kwargs):
         """
@@ -314,30 +385,37 @@ class GameController(object):
 
         """
         player = self.players[ws]
-        if player['permissions'] > 0:
-            admin_command = AdminCommand(self.trivia, player['id'])
+        if player["permissions"] > 0:
+            admin_command = AdminCommand(self.trivia, player["id"])
             admin_command.run(args[0], *args[1:])
 
     def chat(self, ws, text):
         player = self.players[ws]
+        text = self.good_place(text)
         entry = {
-            'player': player['name'],
-            'text': text,
+            "player": player["name"],
+            "text": text,
         }
         asyncio.ensure_future(self.broadcast(entry))
         entry.update(time=int(time.time()))
 
-        if not text.startswith('!admin'):
+        if not text.startswith("!admin"):
             self.append_chat_log(entry)
 
-        logger.info('Chat: {}: {}'.format(player['name'], text))
+        logger.info("Chat: {}: {}".format(player["name"], text))
         asyncio.ensure_future(self.trivia.chat(ws, player, text))
 
-    def append_chat_log(self, entry):
-            self.chat_scrollback.append(entry)
-            if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
-                self.chat_scrollback = self.chat_scrollback[1:]
+    def good_place(self, text):
+        """This is a good place."""
+        for r, repl in GOOD_PLACE.items():
+            text = r.sub(repl, text)
 
+        return text
+
+    def append_chat_log(self, entry):
+        self.chat_scrollback.append(entry)
+        if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
+            self.chat_scrollback = self.chat_scrollback[1:]
 
 
 class AdminCommand(object):
@@ -345,6 +423,7 @@ class AdminCommand(object):
     Run an administrative command.
 
     """
+
     def __init__(self, game, player_id):
         self.game = game
         self.player_id = player_id
@@ -359,13 +438,15 @@ class AdminCommand(object):
                 else:
                     logger.warn("{} has no access to: {}".format(player, cmd))
         else:
-            logger.info("Player #{} triggered unknown command: {}".format(self.player_id, cmd))
+            logger.info(
+                "Player #{} triggered unknown command: {}".format(self.player_id, cmd)
+            )
 
     def next(self, *args):
         self.game.next_round()
 
     def stop(self, *args):
-        self.game.stop_game("Stopped by administrator.", lock='lock' in args)
+        self.game.stop_game("Stopped by administrator.", lock="lock" in args)
 
     def unlock(self, *args):
         self.game.state = TriviaGame.STATE_IDLE
@@ -373,4 +454,6 @@ class AdminCommand(object):
 
     def start(self, *args):
         """If game is locked, only this will start it again."""
-        self.game.timeout = asyncio.ensure_future(self.game.delay_new_round(new_round=True))
+        self.game.timeout = asyncio.ensure_future(
+            self.game.delay_new_round(new_round=True)
+        )
