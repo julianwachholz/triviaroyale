@@ -1,13 +1,11 @@
 import asyncio
-import time
-import os
 import logging
+import os
+import time
 
 import requests
-
 from trivia.game import TriviaGame
-from trivia.models import Player, db_session, commit
-
+from trivia.models import Player, commit, db_session
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +42,7 @@ class GameController(object):
     Login/passwords and chat interaction goes through this.
 
     """
-    CHAT_SCROLLBACK = 30
+    CHAT_SCROLLBACK = 50
 
     COMMANDS = [
         'help',
@@ -297,6 +295,7 @@ class GameController(object):
             'name': player.name,
             'permissions': player.permissions,
         }
+        asyncio.ensure_future(self.send(ws, self.chat_scrollback))
         self._set_name(ws, player.id, player.name)
 
         if not player.has_password():
@@ -308,7 +307,6 @@ class GameController(object):
 
         asyncio.ensure_future(self.send(ws, {'setinfo': player.get_recent_scores()}))
         asyncio.ensure_future(self.send(ws, {'setinfo': self.trivia.get_round_info()}))
-        asyncio.ensure_future(self.send(ws, self.chat_scrollback))
 
     def admin(self, ws, *args, **kwargs):
         """
@@ -330,12 +328,16 @@ class GameController(object):
         entry.update(time=int(time.time()))
 
         if not text.startswith('!admin'):
+            self.append_chat_log(entry)
+
+        logger.info('Chat: {}: {}'.format(player['name'], text))
+        asyncio.ensure_future(self.trivia.chat(ws, player, text))
+
+    def append_chat_log(self, entry):
             self.chat_scrollback.append(entry)
             if len(self.chat_scrollback) > self.CHAT_SCROLLBACK:
                 self.chat_scrollback = self.chat_scrollback[1:]
 
-        logger.info('Chat: {}: {}'.format(player['name'], text))
-        asyncio.ensure_future(self.trivia.chat(ws, player, text))
 
 
 class AdminCommand(object):
