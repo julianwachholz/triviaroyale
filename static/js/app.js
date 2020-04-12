@@ -538,6 +538,12 @@
         login: localStorage.getItem("playername"),
       });
     });
+    logout.addEventListener("click", function (event) {
+      event.preventDefault();
+      localStorage.removeItem("playername");
+      localStorage.removeItem("password");
+      window.location.reload();
+    });
 
     /**
      * Load links in modal inside the modal itself.
