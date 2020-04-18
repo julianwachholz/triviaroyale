@@ -184,6 +184,17 @@
         _paq.push(["trackEvent", "Modal", "ChangeName"]);
         break;
 
+      case "newname":
+        modalform.classList.add("hidden");
+        modaltext.innerHTML =
+          "<h2>TriviaRoyale</h2>" +
+          "<p>Hey there, welcome back! We have a new name! </p>" +
+          "<p>trivia.ju.io is now <strong>TriviaRoyale.io</strong>!</p>" +
+          "<p>Please update your saved bookmarks and homescreen apps, thank you!</p>" +
+          "<p style='margin-top:2rem'><button onclick='modalclose.click()'>Got it!</button></p>";
+        _paq.push(["trackEvent", "Modal", "NewName"]);
+        break;
+
       case "password":
         if (!data.login) {
           console.warn("Password modal requires a login.");
@@ -606,6 +617,11 @@
 
   window.addEventListener("load", function () {
     body.classList.remove("hidden");
+
+    if (window.location.search.includes("newname=1")) {
+      history.replaceState(null, "TriviaRoyale", "/");
+      showModal("newname");
+    }
   });
 
   window.addEventListener("keydown", function (event) {
