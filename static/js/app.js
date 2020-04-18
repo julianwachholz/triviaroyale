@@ -154,10 +154,10 @@
     switch (modalId) {
       case "welcome":
         modalcommand.value = "login";
-        var text = "<h2>Welcome to Trivia!</h2>";
+        var text = "<h2>Welcome to TriviaRoyale!</h2>";
         text += "<p>Play rounds of trivia questions against other players.";
         text +=
-          "The first to correctly enter the answer in the chat wins the round!</p>";
+          "The first to correctly enter the answer in the chat wins points! Climb to the top of the highscores!</p>";
         text +=
           "<p>Be square, play fair: No cheating by looking up answers elsewhere!</p>";
         text +=
@@ -353,7 +353,8 @@
           formatText(escapeHTML(opts.text)) +
           "</em></span>";
       } else {
-        text = "<strong>Trivia:</strong> " + formatText(escapeHTML(opts.text));
+        text =
+          "<strong>TriviaRoyale:</strong> " + formatText(escapeHTML(opts.text));
         if (!!opts.unescaped) {
           text += " " + opts.unescaped;
         }
@@ -596,7 +597,7 @@
         modal.classList.add("hidden");
       }, 200);
       _paq.push(["setCustomUrl", "/"]);
-      _paq.push(["setDocumentTitle", "Trivia"]);
+      _paq.push(["setDocumentTitle", "TriviaRoyale"]);
       _paq.push(["trackPageView"]);
     };
     modalcancel.addEventListener("click", modalCancelFn);

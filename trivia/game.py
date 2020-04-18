@@ -1,11 +1,10 @@
 import asyncio
-import time
-import math
 import logging
+import math
+import time
 from datetime import datetime
 
-from .models import Round, Player, Question, db_session, commit
-
+from .models import Player, Question, Round, commit, db_session
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +93,7 @@ class TriviaGame(object):
             )
 
         elif self.state == self.STATE_IDLE:
-            game = ('<p>Trivia is not running.</p>'
+            game = ('<p>TriviaRoyale is not running.</p>'
                     '<p><button class="z4" onclick="command(\'start\')">Start new round</button></p>')
 
         elif self.state == self.STATE_STARTING:
@@ -106,7 +105,7 @@ class TriviaGame(object):
             )
 
         elif self.state == self.STATE_LOCKED:
-            game = '<p>Trivia is stopped.</p><p>Only an administrator can start it.</p>'
+            game = '<p>TriviaRoyale is stopped.</p><p>Only an administrator can start it.</p>'
 
         return {
             'game': game,

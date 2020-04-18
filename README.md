@@ -1,5 +1,4 @@
-trivia.ju.io
-============
+# TriviaRoyale
 
 An online game of trivia questions using websockets and python built on top of
 its new asyncio feature with the help of
@@ -7,11 +6,9 @@ its new asyncio feature with the help of
 
 Database queries are performed using [PonyORM](http://ponyorm.com/).
 
-You can play it right now on https://trivia.ju.io/
+You can play it right now on https://triviaroyale.io
 
-
-Running it yourself
--------------------
+## Running it yourself
 
 Map the `public` directory to a web-accessible folder for your web server.
 
@@ -31,23 +28,17 @@ no example questions for you (coming soon I guess).
 Run the `app.py` in the admin folder to get a Flask instance with a very
 simple and unprotected administrative interface.
 
-
-Contributions
--------------
+## Contributions
 
 Contributions are always welcome! Please try to match the current
 style but feel free to clean up messy things along the way. :)
 
-
-TODO
-----
+## TODO
 
 - Submit new question
 - Report question
 
+## License
 
-License
--------
-
-`trivia.ju.io` is licensed under BSD.
+`TriviaRoyale` is licensed under BSD.
 See `LICENSE` file for further information.

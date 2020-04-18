@@ -83,16 +83,16 @@ class GameController(object):
             "*/vote* - Rate a question after a round.",
             "*/next* - Skip to next question.",
             "*/login* - Change nick or password.",
-            "*/info* - More info about trivia.ju.io",
+            "*/info* - More info about TriviaRoyale",
             "Use /help _<command>_ for more info.",
             "All commands may also be prefixed with *!* or a dot *.* instead of a slash */*.",
         ],
-        "rules": ["*/rules* - Read the game rules.",],
+        "rules": ["*/rules* - Read the game rules."],
         "vote": [
             "*/vote <up|down>* - Rate a question after a round.",
             "Use */++ /good* or */-- /bad* to leave a positive or negative rating respectively.",
         ],
-        "start": ["*/start* Start a new round of Trivia."],
+        "start": ["*/start* Start a new round of TriviaRoyale."],
         "hint": [
             "*/hint* Request a new hint for the current question, if possible. Shorthand: */h*",
         ],
@@ -271,7 +271,7 @@ class GameController(object):
     def info(self, ws, *args, **kwargs):
         infotext = [
             "This game uses Python and asyncio under the hood.",
-            "Find out more on https://github.com/julianwachholz/trivia.ju.io",
+            "Find out more on https://github.com/julianwachholz/triviaroyale",
         ]
         asyncio.ensure_future(self.send(ws, [{"system": line} for line in infotext]))
 
