@@ -381,9 +381,9 @@ class GameController(object):
                 self.send(
                     ws,
                     {
-                        "system": "You currently have no password!",
+                        "system": "You currently have no password! Your nickname is not protected.",
                         "system_extra": "<a href=\"#\" onclick=\"showModal('password', {{login:'{}'}})\">"
-                        "click here to set a password!</a>".format(player.name),
+                        "Click here to set a password!</a>".format(player.name),
                     },
                 )
             )
