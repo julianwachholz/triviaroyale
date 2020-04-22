@@ -83,7 +83,6 @@ class GameController(object):
             "*/hint* - Request a hint.",
             "*/vote* - Rate a question after a round.",
             "*/next* - Skip to next question.",
-            "*/login* - Change nick or password.",
             "*/info* - More info about TriviaRoyale",
             "Use /help _<command>_ for more info.",
             "All commands may also be prefixed with *!* or a dot *.* instead of a slash */*.",
@@ -93,18 +92,12 @@ class GameController(object):
             "*/vote <up|down>* - Rate a question after a round.",
             "Use */++ /good* or */-- /bad* to leave a positive or negative rating respectively.",
         ],
-        "start": ["*/start* Start a new round of TriviaRoyale."],
         "hint": [
             "*/hint* Request a new hint for the current question, if possible. Shorthand: */h*",
         ],
         "next": [
             "*/next* Skip the current waiting time between rounds. (Shorthand: */n*)",
             "Only possible if you have a streak of at least 5.",
-        ],
-        "login": [
-            "*/login* _<nick>_ or */login* password <password>_",
-            "You may change your player name with this.",
-            "If you change your password, you will need to enter it again the next time you log in.",
         ],
     }
 
@@ -249,12 +242,15 @@ class GameController(object):
                     self.players[ws]["name"], command, args
                 )
             )
+            asyncio.ensure_future(
+                self.send(ws, {"system": f"{command}: Unknown command"})
+            )
 
     def help(self, ws, *args, **kwargs):
         if len(args) == 0 or args[0] == "help":
             helptext = self.HELP[""]
         else:
-            helptext = self.HELP.get(args[0], ["Unknown command."])
+            helptext = self.HELP.get(args[0], [f"Help: {args[0]}: unknown command"])
         asyncio.ensure_future(self.send(ws, [{"system": line} for line in helptext]))
 
     def rules(self, ws, *args, **kwargs):
@@ -304,7 +300,7 @@ class GameController(object):
 
         """
         if self.trivia.state == TriviaGame.STATE_IDLE:
-        logger.info("Start: {}".format(self.players[ws]["name"]))
+            logger.info("Start: {}".format(self.players[ws]["name"]))
             self.trivia.timeout = asyncio.ensure_future(
                 self.trivia.delay_new_round(True)
             )
