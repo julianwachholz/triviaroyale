@@ -21,10 +21,11 @@ class ModelView(BaseModelView):
         admin.add_view(ModelView(MyModel))
 
     """
-    column_default_sort = 'pk'
+
+    column_default_sort = "pk"
 
     column_type_formatters = {
-        datetime.datetime: lambda v, dt: dt.strftime('%c'),
+        datetime.datetime: lambda v, dt: dt.strftime("%c"),
         types.MethodType: lambda v, fun: fun(),
         bool: typefmt.bool_formatter,
     }
@@ -57,6 +58,7 @@ class ModelView(BaseModelView):
     def scaffold_form(self):
         class ModelForm(Form):
             pass
+
         for attr in self._get_fields():
             setattr(ModelForm, attr.name, fields.StringField(attr.name))
         return ModelForm

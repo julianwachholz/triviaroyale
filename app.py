@@ -7,6 +7,7 @@ import os
 import ssl
 
 import websockets
+
 from trivia.chat import GameController
 from trivia.game import TriviaGame
 from trivia.models import db

@@ -1,18 +1,17 @@
-import os
 import datetime
 import locale
+import os
 
-
-LOCALE = os.environ.get('LC_ALL', 'en_US.UTF-8')
+LOCALE = os.environ.get("LC_ALL", "en_US.UTF-8")
 
 
 def format_number(num, decimal_places=0):
     if not isinstance(num, (int, float)):
-        return 'n/a'
+        return "n/a"
     locale.setlocale(locale.LC_ALL, LOCALE)
     if decimal_places > 0 and isinstance(num, float):
-        return locale.format('%.{}f'.format(decimal_places), num, grouping=True)
-    return locale.format('%d', num, grouping=True)
+        return locale.format("%.{}f".format(decimal_places), num, grouping=True)
+    return locale.format("%d", num, grouping=True)
 
 
 def pluralize(s, p):
@@ -20,12 +19,12 @@ def pluralize(s, p):
 
 
 TIMESINCE_CHUNKS = (
-    (60 * 60 * 24 * 365, pluralize('%d year', '%d years')),
-    (60 * 60 * 24 * 30, pluralize('%d month', '%d months')),
-    (60 * 60 * 24 * 7, pluralize('%d week', '%d weeks')),
-    (60 * 60 * 24, pluralize('%d day', '%d days')),
-    (60 * 60, pluralize('%d hour', '%d hours')),
-    (60, pluralize('%d minute', '%d minutes'))
+    (60 * 60 * 24 * 365, pluralize("%d year", "%d years")),
+    (60 * 60 * 24 * 30, pluralize("%d month", "%d months")),
+    (60 * 60 * 24 * 7, pluralize("%d week", "%d weeks")),
+    (60 * 60 * 24, pluralize("%d day", "%d days")),
+    (60 * 60, pluralize("%d hour", "%d hours")),
+    (60, pluralize("%d minute", "%d minutes")),
 )
 
 
@@ -38,7 +37,7 @@ def get_week_tuple(dt):
     """
     return (
         dt - datetime.timedelta(days=dt.weekday()),
-        dt + datetime.timedelta(days=6 - dt.weekday())
+        dt + datetime.timedelta(days=6 - dt.weekday()),
     )
 
 
@@ -63,7 +62,7 @@ def timesince(d, now=None, reversed=False):
     since = delta.days * 24 * 60 * 60 + delta.seconds
     if since <= 0:
         # d is in the future compared to now, stop processing.
-        return '0 minutes'
+        return "0 minutes"
     for i, (seconds, name) in enumerate(TIMESINCE_CHUNKS):
         count = since // seconds
         if count != 0:
@@ -74,5 +73,5 @@ def timesince(d, now=None, reversed=False):
         seconds2, name2 = TIMESINCE_CHUNKS[i + 1]
         count2 = (since - (seconds * count)) // seconds2
         if count2 != 0:
-            result += ', ' + name2(count2)
+            result += ", " + name2(count2)
     return result

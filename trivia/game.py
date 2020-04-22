@@ -14,11 +14,12 @@ class TriviaGame(object):
     The main trivia game.
 
     """
-    STATE_IDLE = 'idle'
-    STATE_STARTING = 'starting'
-    STATE_QUESTION = 'question'
-    STATE_WAITING = 'waiting'
-    STATE_LOCKED = 'locked'
+
+    STATE_IDLE = "idle"
+    STATE_STARTING = "starting"
+    STATE_QUESTION = "question"
+    STATE_WAITING = "waiting"
+    STATE_LOCKED = "locked"
 
     ROUND_TIME = 45.0
     WAIT_TIME = 15.0
@@ -48,22 +49,26 @@ class TriviaGame(object):
 
     def get_round_info(self):
         elapsed_time = (time.time() - self.timer_start) if self.timer_start else 0
-        timer = ''
+        timer = ""
 
         if self.state == self.STATE_QUESTION:
-            game = ('<p class="question-info">#{round.id}</p>'
-                    '<p class="question-categories">{round.question.category_names}</p>'
-                    '<p class="question">{round.question.question}</p>').format(round=self.round)
+            game = (
+                '<p class="question-info">#{round.id}</p>'
+                '<p class="question-categories">{round.question.category_names}</p>'
+                '<p class="question">{round.question.question}</p>'
+            ).format(round=self.round)
 
-            if self.hints['current'] is not None:
-                game += '<p class="question-hint">{}</p>'.format(self.hints['current'])
+            if self.hints["current"] is not None:
+                game += '<p class="question-hint">{}</p>'.format(self.hints["current"])
 
             if self.hint_available(ignore_cooldown=True):
                 game += '<p><button class="tiny z2" onclick="command(\'hint\')">Get hint</button></p>'
 
-            timer = ('<div class="timer-bar" style="width:{width}%" '
-                     'data-total-time="{total_time}" data-time-left="{time_left}"></div>'
-                     '<div class="timer-value"><span>{time_left:.2f}</span>s</div>').format(
+            timer = (
+                '<div class="timer-bar" style="width:{width}%" '
+                'data-total-time="{total_time}" data-time-left="{time_left}"></div>'
+                '<div class="timer-value"><span>{time_left:.2f}</span>s</div>'
+            ).format(
                 width=(self.ROUND_TIME - elapsed_time) / self.ROUND_TIME * 100.0,
                 total_time=self.ROUND_TIME,
                 time_left=self.ROUND_TIME - elapsed_time,
@@ -74,42 +79,56 @@ class TriviaGame(object):
             answer = self.round.question.primary_answer
 
             if self.round.solved:
-                game += ('<p><b>{round.solver.name}</b> got '
-                         '<b>{round.points}</b> points for answering in <b>{round.time_taken:.2f}s</b>: '
-                         '<br>{round.question.question}</p>').format(round=self.round)
-                game += '<p>Correct answer: <b>{}</b></p>'.format(answer)
+                game += (
+                    "<p><b>{round.solver.name}</b> got "
+                    "<b>{round.points}</b> points for answering in <b>{round.time_taken:.2f}s</b>: "
+                    "<br>{round.question.question}</p>"
+                ).format(round=self.round)
+                game += "<p>Correct answer: <b>{}</b></p>".format(answer)
             else:
-                game += ('<p>{round.question.question}</p><p><b>Time\'s up!</b> '
-                         'Nobody got the answer: <b>{answer}</b></p>').format(round=self.round, answer=answer)
+                game += (
+                    "<p>{round.question.question}</p><p><b>Time's up!</b> "
+                    "Nobody got the answer: <b>{answer}</b></p>"
+                ).format(round=self.round, answer=answer)
 
-            game += ('<p id="question-vote" class="question-vote">'
-                     '<button class="tiny positive z2" onclick="command(\'vote\', 1)">Good Question</button>'
-                     '<button class="tiny negative z2" onclick="command(\'vote\', -1)">Bad Question</button></p>')
+            game += (
+                '<p id="question-vote" class="question-vote">'
+                '<button class="tiny positive z2" onclick="command(\'vote\', 1)">Good Question</button>'
+                '<button class="tiny negative z2" onclick="command(\'vote\', -1)">Bad Question</button></p>'
+            )
 
-            timer = ('<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
-                     '<div class="timer-value">Next round in: <span>{time_left}</span>s</div>').format(
+            timer = (
+                '<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
+                '<div class="timer-value">Next round in: <span>{time_left}</span>s</div>'
+            ).format(
                 width=(self.WAIT_TIME - elapsed_time) / self.WAIT_TIME * 100.0,
                 time_left=self.WAIT_TIME - elapsed_time,
             )
 
         elif self.state == self.STATE_IDLE:
-            game = ('<p>TriviaRoyale is not running.</p>'
-                    '<p><button class="z4" onclick="command(\'start\')">Start new round</button></p>')
+            game = (
+                "<p>TriviaRoyale is not running.</p>"
+                '<p><button class="z4" onclick="command(\'start\')">Start new round</button></p>'
+            )
 
         elif self.state == self.STATE_STARTING:
-            game = '<p>New round starting in a few seconds...</p>'
-            timer = ('<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
-                     '<div class="timer-value">Starting in: <span>{time_left}</span>s</div>').format(
-                width=(self.WAIT_TIME_NEW_ROUND - elapsed_time) / self.WAIT_TIME_NEW_ROUND * 100.0,
+            game = "<p>New round starting in a few seconds...</p>"
+            timer = (
+                '<div class="timer-bar colorless" style="width:{width}%" data-time-left="{time_left}"></div>'
+                '<div class="timer-value">Starting in: <span>{time_left}</span>s</div>'
+            ).format(
+                width=(self.WAIT_TIME_NEW_ROUND - elapsed_time)
+                / self.WAIT_TIME_NEW_ROUND
+                * 100.0,
                 time_left=self.WAIT_TIME_NEW_ROUND - elapsed_time,
             )
 
         elif self.state == self.STATE_LOCKED:
-            game = '<p>TriviaRoyale is stopped.</p><p>Only an administrator can start it.</p>'
+            game = "<p>TriviaRoyale is stopped.</p><p>Only an administrator can start it.</p>"
 
         return {
-            'game': game,
-            'timer': timer,
+            "game": game,
+            "timer": timer,
         }
 
     async def run(self):
@@ -134,38 +153,45 @@ class TriviaGame(object):
 
     async def round_solved(self, ws, player):
         self.state = self.STATE_WAITING
-        if self.streak['player_id'] == player['id']:
-            self.streak['count'] += 1
-            self.streak['player_name'] = player['name']
-            if self.streak['count'] % self.STREAK_STEPS == 0:
-                self.announce_streak(player['name'])
+        if self.streak["player_id"] == player["id"]:
+            self.streak["count"] += 1
+            self.streak["player_name"] = player["name"]
+            if self.streak["count"] % self.STREAK_STEPS == 0:
+                self.announce_streak(player["name"])
         else:
-            if self.streak['count'] >= self.STREAK_STEPS:
-                self.announce_streak(player['name'], broken=True)
+            if self.streak["count"] >= self.STREAK_STEPS:
+                self.announce_streak(player["name"], broken=True)
             self.streak = {
-                'player_id': player['id'],
-                'player_name': player['name'],
-                'count': 1,
+                "player_id": player["id"],
+                "player_name": player["name"],
+                "count": 1,
             }
 
         with db_session():
-            player_db = Player.get(lambda p: p.name == player['name'])
+            player_db = Player.get(lambda p: p.name == player["name"])
             played_round = Round[self.round.id]
             played_round.solved_by(
                 player_db,
                 self.ROUND_TIME,
-                hints=self.hints['count'],
-                streak=self.streak['count']
+                hints=self.hints["count"],
+                streak=self.streak["count"],
             )
             played_round.end_round()
             self.round = played_round
 
-        asyncio.ensure_future(self.send(ws, {'setinfo': player_db.get_recent_scores()}))
+        asyncio.ensure_future(self.send(ws, {"setinfo": player_db.get_recent_scores()}))
 
         asyncio.ensure_future(self.round_end())
-        logger.info('#{} END: {} for {} points ({} hints used) in {:.2f}s: {}'.format(
-            self.round.id, self.round.solver, self.round.points, self.hints['count'],
-            self.round.time_taken, self.round.question))
+        logger.info(
+            "#{} END: {} for {} points ({} hints used) in {:.2f}s: {}".format(
+                self.round.id,
+                self.round.solver,
+                self.round.points,
+                self.hints["count"],
+                self.round.time_taken,
+                self.round.question,
+            )
+        )
 
     def next_round(self):
         """
@@ -188,14 +214,14 @@ class TriviaGame(object):
         else:
             self.state = self.STATE_IDLE
 
-        asyncio.ensure_future(self.broadcast({
-            'system': reason or "Stopping due to inactivity!",
-        }))
+        asyncio.ensure_future(
+            self.broadcast({"system": reason or "Stopping due to inactivity!",})
+        )
         self.broadcast_info()
 
     async def delay_new_round(self, new_round=False):
         if self.state == self.STATE_STARTING:
-            logger.warn('Preventing multiple simultaneous games!')
+            logger.warn("Preventing multiple simultaneous games!")
             return
 
         wait = self.WAIT_TIME
@@ -213,10 +239,16 @@ class TriviaGame(object):
 
         await asyncio.sleep(wait)
 
-        if self.player_count < 1 or time.time() - self.last_action > self.INACTIVITY_TIMEOUT:
+        if (
+            self.player_count < 1
+            or time.time() - self.last_action > self.INACTIVITY_TIMEOUT
+        ):
             self.stop_game()
-            logger.info('No activity, stopping game. ({} players online, {:.2f}s)'.format(
-                self.player_count, time.time() - self.last_action))
+            logger.info(
+                "No activity, stopping game. ({} players online, {:.2f}s)".format(
+                    self.player_count, time.time() - self.last_action
+                )
+            )
         else:
             asyncio.ensure_future(self.start_new_round())
 
@@ -239,7 +271,7 @@ class TriviaGame(object):
         self.timer_start = time.time()
         self._reset_hints()
         self._reset_votes()
-        self.announce('Round #{}'.format(self.round.id))
+        self.announce("Round #{}".format(self.round.id))
         self.broadcast_info()
 
     async def round_timeout(self):
@@ -252,7 +284,7 @@ class TriviaGame(object):
             end_round = Round[self.round.id]
             end_round.end_round()
             self.round = end_round
-        logger.info('#{} END: NO WINNER: {}'.format(self.round.id, self.round.question))
+        logger.info("#{} END: NO WINNER: {}".format(self.round.id, self.round.question))
         asyncio.ensure_future(self.round_end())
 
     async def round_end(self):
@@ -279,80 +311,83 @@ class TriviaGame(object):
             asyncio.ensure_future(self.broadcast_update(fut, num + 1))
 
     def broadcast_info(self):
-        asyncio.ensure_future(self.broadcast({
-            'setinfo': self.get_round_info(),
-        }))
+        asyncio.ensure_future(self.broadcast({"setinfo": self.get_round_info(),}))
 
     def announce(self, message):
-        asyncio.ensure_future(self.broadcast({
-            'system': message,
-            'announce': True,
-        }))
+        asyncio.ensure_future(self.broadcast({"system": message, "announce": True,}))
 
     def _reset_streak(self):
         self.streak = {
-            'count': 0,
-            'player_name': None,
-            'player_id': None,
+            "count": 0,
+            "player_name": None,
+            "player_id": None,
         }
 
     def has_streak(self, player):
-        return self.streak['player_id'] == player['id'] and self.streak['count'] >= self.STREAK_STEPS
+        return (
+            self.streak["player_id"] == player["id"]
+            and self.streak["count"] >= self.STREAK_STEPS
+        )
 
     def announce_streak(self, player_name, broken=False):
-        streak = self.streak['count']
+        streak = self.streak["count"]
         if broken:
-            info = "{} broke {}'s streak of *{}*!".format(player_name, self.streak['player_name'], streak)
-            logger.info('#{} STREAK BREAK: {} broke {} ({})'.format(
-                self.round.id, player_name, self.streak['player_name'], streak))
+            info = "{} broke {}'s streak of *{}*!".format(
+                player_name, self.streak["player_name"], streak
+            )
+            logger.info(
+                "#{} STREAK BREAK: {} broke {} ({})".format(
+                    self.round.id, player_name, self.streak["player_name"], streak
+                )
+            )
         else:
             info = "{} has reached a streak of *{}*!".format(player_name, streak)
-            logger.info('#{} STREAK: {} has {}'.format(self.round.id, player_name, streak))
+            logger.info(
+                "#{} STREAK: {} has {}".format(self.round.id, player_name, streak)
+            )
             if streak == self.STREAK_STEPS:
                 info += " You can skip to the next round with *!next*"
-        asyncio.ensure_future(self.broadcast({
-            'system': info,
-        }))
+        asyncio.ensure_future(self.broadcast({"system": info,}))
 
     def _reset_hints(self):
         self.hints = {
-            'count': 0,
-            'current': None,
-            'time': 0,
-            'cooldown': 0,
+            "count": 0,
+            "current": None,
+            "time": 0,
+            "cooldown": 0,
         }
 
     def hint_available(self, ignore_cooldown=False):
-        if self.state != self.STATE_QUESTION or self.hints['count'] >= self.HINT_MAX:
+        if self.state != self.STATE_QUESTION or self.hints["count"] >= self.HINT_MAX:
             return False
 
         now = time.time()
         elapsed_time = now - self.timer_start
         current_max_hints = math.ceil(elapsed_time / self.HINT_TIMING)
 
-        if not ignore_cooldown and now - self.hints['time'] < self.HINT_COOLDOWN:
+        if not ignore_cooldown and now - self.hints["time"] < self.HINT_COOLDOWN:
             return False
 
-        if current_max_hints > self.hints['count']:
+        if current_max_hints > self.hints["count"]:
             return True
         return False
 
     def get_hint(self, from_player=None):
-        if self.state != self.STATE_QUESTION or self.hints['count'] >= self.HINT_MAX:
+        if self.state != self.STATE_QUESTION or self.hints["count"] >= self.HINT_MAX:
             return
 
         if self.hint_available():
-            logger.info('#{} HINT: {}'.format(self.round.id, from_player))
-            self.hints['time'] = time.time()
-            self.hints['count'] += 1
-            self.hints['current'] = self.round.question.get_hint(self.hints['count'])
+            logger.info("#{} HINT: {}".format(self.round.id, from_player))
+            self.hints["time"] = time.time()
+            self.hints["count"] += 1
+            self.hints["current"] = self.round.question.get_hint(self.hints["count"])
             self.broadcast_info()
 
     def _reset_votes(self):
         self.votes = {
-            'players': set(),
-            'up': 0,
-            'down': 0,
+            "players": set(),
+            "up": 0,
+            "down": 0,
         }
 
     def queue_vote(self, player_name, value):
@@ -363,22 +398,28 @@ class TriviaGame(object):
         if self.state != self.STATE_WAITING or self.round is None:
             return False
 
-        if player_name not in self.votes['players']:
-            self.votes['players'].add(player_name)
+        if player_name not in self.votes["players"]:
+            self.votes["players"].add(player_name)
             if value == 1:
-                self.votes['up'] += 1
+                self.votes["up"] += 1
             elif value == -1:
-                self.votes['down'] += 1
+                self.votes["down"] += 1
             return True
         return False
 
     def save_votes(self):
         if self.round is not None:
-            logger.info("#{} VOTES: +{} -{} by {}".format(
-                self.round.id, self.votes['up'], self.votes['down'], ', '.join(self.votes['players'])))
+            logger.info(
+                "#{} VOTES: +{} -{} by {}".format(
+                    self.round.id,
+                    self.votes["up"],
+                    self.votes["down"],
+                    ", ".join(self.votes["players"]),
+                )
+            )
             with db_session():
                 q = Question[self.round.question.id]
                 q.set(
-                    vote_up=q.vote_up + self.votes['up'],
-                    vote_down=q.vote_down + self.votes['down']
+                    vote_up=q.vote_up + self.votes["up"],
+                    vote_down=q.vote_down + self.votes["down"],
                 )

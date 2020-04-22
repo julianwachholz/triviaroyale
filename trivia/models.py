@@ -1,18 +1,28 @@
+import math
 import os
 import re
-import math
 from collections import OrderedDict
 from datetime import datetime, timedelta
 
-from pony.orm import Database, Required, Optional, Set
-from pony.orm import db_session, sql_debug, commit, select, get, count, avg  # NOQA
 from passlib.hash import bcrypt_sha256
+from pony.orm import commit  # NOQA
+from pony.orm import (
+    Database,
+    Optional,
+    Required,
+    Set,
+    avg,
+    count,
+    db_session,
+    get,
+    select,
+    sql_debug,
+)
 
 from trivia.helpers import get_week_tuple
 
-
 db = Database()
-sql_debug(bool(os.environ.get('SQL_DEBUG', False)))
+sql_debug(bool(os.environ.get("SQL_DEBUG", False)))
 
 
 class Category(db.Entity):
@@ -20,8 +30,9 @@ class Category(db.Entity):
     Questions should have at least one category.
 
     """
+
     name = Required(str, 40, unique=True)
-    questions = Set('Question')
+    questions = Set("Question")
 
 
 class Question(db.Entity):
@@ -34,6 +45,7 @@ class Question(db.Entity):
           of times they have been played.
 
     """
+
     GET_RANDOM_SQL = """
         SELECT * FROM question
         WHERE active = true
@@ -49,8 +61,8 @@ class Question(db.Entity):
     HINTS_PENALTY = 0.5
     STREAK_MODIFIER = 1.05
 
-    MASK_CHAR = '_'
-    COMMON_WORDS = ['the', 'a', 'an', 'and', 'of']
+    MASK_CHAR = "_"
+    COMMON_WORDS = ["the", "a", "an", "and", "of"]
 
     active = Required(bool, default=False)
 
@@ -67,34 +79,36 @@ class Question(db.Entity):
     vote_up = Required(int, default=0)
     vote_down = Required(int, default=0)
 
-    date_added = Required(datetime, sql_default='CURRENT_TIMESTAMP')
-    date_modified = Required(datetime, sql_default='CURRENT_TIMESTAMP')
-    last_played = Required(datetime, sql_default='CURRENT_TIMESTAMP')
+    date_added = Required(datetime, sql_default="CURRENT_TIMESTAMP")
+    date_modified = Required(datetime, sql_default="CURRENT_TIMESTAMP")
+    last_played = Required(datetime, sql_default="CURRENT_TIMESTAMP")
 
-    rounds = Set('Round')
-    reports = Set('Report')
-    player = Optional('Player')
+    rounds = Set("Round")
+    reports = Set("Report")
+    player = Optional("Player")
 
     def __str__(self):
-        return '{} *** {}'.format(self.question, self.primary_answer)
+        return "{} *** {}".format(self.question, self.primary_answer)
 
     @property
     def primary_answer(self):
-        return self.answer.split('|')[0]
+        return self.answer.split("|")[0]
 
     @property
     def answer_re(self):
-        if not hasattr(self, '_answer_re'):
-            answers = map(lambda a: re.escape(a), self.answer.split('|'))
-            pattern = r'\b{}\b'.format('|'.join(answers))
+        if not hasattr(self, "_answer_re"):
+            answers = map(lambda a: re.escape(a), self.answer.split("|"))
+            pattern = r"\b{}\b".format("|".join(answers))
             self._answer_re = re.compile(pattern, re.IGNORECASE)
         return self._answer_re
 
     @property
     def category_names(self):
-        if not hasattr(self, '_category_names'):
+        if not hasattr(self, "_category_names"):
             with db_session():
-                self._category_names = ', '.join([c.name for c in self.categories.order_by(Category.name)])
+                self._category_names = ", ".join(
+                    [c.name for c in self.categories.order_by(Category.name)]
+                )
         return self._category_names
 
     @property
@@ -118,7 +132,7 @@ class Question(db.Entity):
 
         if vowels:
             # skip double vowels
-            r = re.compile(r'(?:\b|[^aeiou])([aeiou])', re.I)
+            r = re.compile(r"(?:\b|[^aeiou])([aeiou])", re.I)
             for i, match in enumerate(r.finditer(word)):
                 masked_word[match.end() - 1] = match.group(1)
                 if i + 1 >= vowels:
@@ -128,12 +142,12 @@ class Question(db.Entity):
                 consonants += 1
 
         if consonants:
-            r = re.compile(r'([^aeiou])', re.I)
+            r = re.compile(r"([^aeiou])", re.I)
             for i, match in enumerate(r.finditer(word)):
                 masked_word[match.end() - 1] = match.group(1)
                 if i + 1 >= consonants or word_len < 4:
                     break
-        return ''.join(masked_word)
+        return "".join(masked_word)
 
     def get_hint(self, num):
         """
@@ -144,10 +158,10 @@ class Question(db.Entity):
         """
         answer = self.primary_answer
 
-        if num == 1 and not re.search(r'[^A-Za-z]', answer):
+        if num == 1 and not re.search(r"[^A-Za-z]", answer):
             return "{} letters".format(len(answer))
 
-        words = re.compile(r'\w{2,}').findall(answer)
+        words = re.compile(r"\w{2,}").findall(answer)
 
         def _letters(hint_num, consonants=False):
             base = hint_num - (1 if consonants else 0)
@@ -184,7 +198,9 @@ class Question(db.Entity):
             difficulty_factor = 1
         else:
             difficulty_factor = 0.5
-            difficulty_factor += 1 / math.log10(max(self.solve_percentage, 1.1))  # prevent division by zero
+            difficulty_factor += 1 / math.log10(
+                max(self.solve_percentage, 1.1)
+            )  # prevent division by zero
 
         base_points = self.BASE_POINTS * difficulty_factor
         base_points *= self.STREAK_MODIFIER ** (streak - 1)
@@ -203,14 +219,15 @@ class Player(db.Entity):
     A player.
 
     """
+
     NAME_MAX_LEN = 40
     BCRYPT_ROUNDS = 11
     PERMISSIONS = [
-        '__EVERYTHING__',
-        'stop',
-        'start',
-        'unlock',
-        'next',
+        "__EVERYTHING__",
+        "stop",
+        "start",
+        "unlock",
+        "next",
     ]
 
     name = Required(str, NAME_MAX_LEN, unique=True)
@@ -218,15 +235,15 @@ class Player(db.Entity):
     email = Optional(str, 200)
     permissions = Required(int, default=0)
 
-    date_joined = Required(datetime, sql_default='CURRENT_TIMESTAMP')
-    last_played = Required(datetime, sql_default='CURRENT_TIMESTAMP')
+    date_joined = Required(datetime, sql_default="CURRENT_TIMESTAMP")
+    last_played = Required(datetime, sql_default="CURRENT_TIMESTAMP")
 
-    rounds_solved = Set('Round')
-    submitted_reports = Set('Report')
+    rounds_solved = Set("Round")
+    submitted_reports = Set("Report")
     submitted_questions = Set(Question)
 
     def __str__(self):
-        return '{} (#{})'.format(self.name, self.id)
+        return "{} (#{})".format(self.name, self.id)
 
     def logged_in(self):
         self.last_played = datetime.now()
@@ -274,21 +291,37 @@ class Player(db.Entity):
         dt_month = dt.replace(day=1)
         dt_year = dt.replace(month=1, day=1)
 
-        q = select((sum(r.points), count(r), avg(r.points), max(r.points), avg(r.time_taken), min(r.time_taken))
-                   for r in Round if r.solver == self)
+        q = select(
+            (
+                sum(r.points),
+                count(r),
+                avg(r.points),
+                max(r.points),
+                avg(r.time_taken),
+                min(r.time_taken),
+            )
+            for r in Round
+            if r.solver == self
+        )
 
         r = datetime.now()  # dummy for use in lambdas below
         day = q.filter(lambda: r.start_time.date() == dt).get()
-        week = q.filter(lambda: r.start_time >= dt_week[0] and r.start_time <= dt_week[1]).get()
-        month = q.filter(lambda: r.start_time.year == dt.year and r.start_time.month == dt.month).get()
+        week = q.filter(
+            lambda: r.start_time >= dt_week[0] and r.start_time <= dt_week[1]
+        ).get()
+        month = q.filter(
+            lambda: r.start_time.year == dt.year and r.start_time.month == dt.month
+        ).get()
         year = q.filter(lambda: r.start_time.year == dt.year).get()
 
-        return OrderedDict([
-            ('day', (dt, day)),
-            ('week', (dt_week, week)),
-            ('month', (dt_month, month)),
-            ('year', (dt_year, year)),
-        ])
+        return OrderedDict(
+            [
+                ("day", (dt, day)),
+                ("week", (dt_week, week)),
+                ("month", (dt_month, month)),
+                ("year", (dt_year, year)),
+            ]
+        )
 
     @db_session
     def get_recent_scores(self):
@@ -298,19 +331,29 @@ class Player(db.Entity):
         """
         now = datetime.now()
 
-        stats = get((
-            # Last 60 minutes
-            sum(r.points for r in Round if r.solver == self and r.start_time > now - timedelta(hours=1)),
-            count(r.solver == self and r.start_time > now - timedelta(hours=1)),
-
-            # This day
-            sum(r.points for r in Round if r.solver == self and r.start_time.date() == now.date()),
-            count(r.solver == self and r.start_time.date() == now.date()),
-        ) for r in Round)
+        stats = get(
+            (
+                # Last 60 minutes
+                sum(
+                    r.points
+                    for r in Round
+                    if r.solver == self and r.start_time > now - timedelta(hours=1)
+                ),
+                count(r.solver == self and r.start_time > now - timedelta(hours=1)),
+                # This day
+                sum(
+                    r.points
+                    for r in Round
+                    if r.solver == self and r.start_time.date() == now.date()
+                ),
+                count(r.solver == self and r.start_time.date() == now.date()),
+            )
+            for r in Round
+        )
 
         return {
-            'points-1h': '{} ({})'.format(stats[0], stats[1]),
-            'points-day': '{} ({})'.format(stats[2], stats[3]),
+            "points-1h": "{} ({})".format(stats[0], stats[1]),
+            "points-day": "{} ({})".format(stats[2], stats[3]),
         }
 
 
@@ -319,8 +362,9 @@ class Round(db.Entity):
     A single round with a single question.
 
     """
+
     question = Required(Question)
-    start_time = Required(datetime, sql_default='CURRENT_TIMESTAMP')
+    start_time = Required(datetime, sql_default="CURRENT_TIMESTAMP")
 
     solved = Required(bool, default=False)
     solver = Optional(Player)
@@ -343,7 +387,8 @@ class Round(db.Entity):
         self.solver = player
         self.time_taken = datetime.now().timestamp() - self.start_time.timestamp()
         self.points = self.question.calculate_points(
-            self.time_taken / total_time, hints, streak)
+            self.time_taken / total_time, hints, streak
+        )
 
     @db_session
     def end_round(self):
@@ -352,13 +397,10 @@ class Round(db.Entity):
 
         """
         self.question.set(
-            last_played=datetime.now(),
-            times_played=self.question.times_played + 1
+            last_played=datetime.now(), times_played=self.question.times_played + 1
         )
         if self.solved:
-            self.question.set(
-                times_solved=self.question.times_solved + 1
-            )
+            self.question.set(times_solved=self.question.times_solved + 1)
 
 
 class Report(db.Entity):
@@ -366,8 +408,9 @@ class Report(db.Entity):
     A report for a question.
 
     """
+
     question = Required(Question)
     player = Required(Player)
     text = Required(str)
-    created = Required(datetime, sql_default='CURRENT_TIMESTAMP')
+    created = Required(datetime, sql_default="CURRENT_TIMESTAMP")
     done = Required(bool, default=False)
