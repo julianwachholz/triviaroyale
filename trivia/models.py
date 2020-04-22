@@ -59,7 +59,8 @@ class Question(db.Entity):
     MIN_RATING = -3  # Questions with lower rating will not be played
     MIN_PLAYED_ROUNDS = 3
     HINTS_PENALTY = 0.5
-    STREAK_MODIFIER = 1.05
+    STREAK_COUNTER = 5
+    STREAK_BONUS = 50  # 50 bonus points for every 5-round streak
 
     MASK_CHAR = "_"
     COMMON_WORDS = ["the", "a", "an", "and", "of"]
@@ -184,8 +185,7 @@ class Question(db.Entity):
         on a logarithmic scale.
 
         Furthermore, an ongoing streak of a player will slowly increase
-        base awarded points exponentially (winning consecutive rounds, not
-        counting unsolved rounds).
+        base awarded points (winning consecutive rounds, not counting unsolved rounds).
 
         Anything beyond the first hint will also reduce the points
         awarded, as guessing the answer becomes easier with them.
@@ -203,7 +203,6 @@ class Question(db.Entity):
             )  # prevent division by zero
 
         base_points = self.BASE_POINTS * difficulty_factor
-        base_points *= self.STREAK_MODIFIER ** (streak - 1)
 
         penalty = 1
         if hints > 0:
@@ -211,7 +210,9 @@ class Question(db.Entity):
             penalty += (hints - 1) * self.HINTS_PENALTY
 
         base = max(self.MIN_POINTS, base_points * (1 - time_percentage))
-        return int(base / penalty)
+        points = int(base / penalty)
+        bonus_points = self.STREAK_BONUS * (streak // self.STREAK_COUNTER)
+        return points + bonus_points
 
 
 class Player(db.Entity):
