@@ -16,15 +16,17 @@ last_notified = None
 
 
 GOOD_PLACE = {
-    re.compile(search): repl
+    re.compile(search, re.IGNORECASE): repl
     for search, repl in (
         {
-            r"\b(mother)?fuck(ers?|s|ed|ing)?\b": r"\1fork\2",
+            r"\b(mother|motha)?fuck(as?|ers?|s|ed|ing)?\b": r"\1fork\2",
             r"\b(bull)?shit(s|ting)?\b": r"\1shirt\2",
             r"\bbitch(es)?\b": r"bench\1",
             r"\bass(holes?)?\b": r"ash\1",
             r"\bcock(s|suckers?)?\b": r"cork\1",
             r"\bdick(s|heads?)?\b": r"dink\1",
+            r"\bnig{2}er(s)?\b": r"nagger\1",
+            r"\bcunt(s)?\b": r"count\1",
         }
     ).items()
 }
@@ -403,10 +405,10 @@ class GameController(object):
 
     def chat(self, ws, text):
         player = self.players[ws]
-        text = self.good_place(text)
+        good_text = self.good_place(text)
         entry = {
             "player": player["name"],
-            "text": text,
+            "text": good_text,
         }
         asyncio.ensure_future(self.broadcast(entry))
         entry.update(time=int(time.time()))
