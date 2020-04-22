@@ -191,7 +191,8 @@
           "<p>Hey there, welcome back! We have a new name! </p>" +
           "<p>trivia.ju.io is now <strong>TriviaRoyale.io</strong>!</p>" +
           "<p>Please update your saved bookmarks and homescreen apps, thank you!</p>" +
-          "<p style='margin-top:2rem'><button onclick='modalclose.click()'>Got it!</button></p>";
+          "<p style='margin:2rem 0'><a href=''>https://triviaroyale.io</a></p>" +
+          "<p><button onclick='modalclose.click()'>Got it!</button></p>";
         _paq.push(["trackEvent", "Modal", "NewName"]);
         break;
 
