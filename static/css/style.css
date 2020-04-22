@@ -296,6 +296,7 @@ footer div {
 }
 
 .timer {
+  z-index: 1;
   font: normal 500 10px/1.4 "Roboto", sans-serif;
   position: relative;
   background-color: rgba(236, 239, 241, 1); /* eceff1 */
