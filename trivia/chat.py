@@ -80,7 +80,6 @@ class GameController(object):
             "Available commands:",
             "*/help* - This text.",
             "*/rules* - Read the rules.",
-            "*/start* - Start a new round.",
             "*/hint* - Request a hint.",
             "*/vote* - Rate a question after a round.",
             "*/next* - Skip to next question.",
@@ -304,8 +303,15 @@ class GameController(object):
         Start a new round if there is no round running yet.
 
         """
+        if self.trivia.state == TriviaGame.STATE_IDLE:
         logger.info("Start: {}".format(self.players[ws]["name"]))
-        self.trivia.timeout = asyncio.ensure_future(self.trivia.delay_new_round(True))
+            self.trivia.timeout = asyncio.ensure_future(
+                self.trivia.delay_new_round(True)
+            )
+        else:
+            asyncio.ensure_future(
+                self.send(ws, {"system": "Trivia is already running!"})
+            )
 
     def hint(self, ws, *args, **kwargs):
         """
