@@ -334,6 +334,7 @@ class GameController(object):
         Register a player, set and change password and change nickname multi-function.
 
         """
+        login = self.good_place(login)
         if login is None or len(login) > Player.NAME_MAX_LEN:
             return
 
