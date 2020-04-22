@@ -376,7 +376,7 @@ footer div {
 }
 .chatinput {
   border: 1px solid rgba(0, 0, 0, 0.5);
-  padding: 0.2em 0.4em;
+  padding: 0.2em 1em;
 }
 
 select,
@@ -514,10 +514,10 @@ th.left {
   text-align: right;
 }
 tbody tr:nth-child(even) {
-  background: #eceff1;
+  background: rgba(0, 0, 0, 0.1);
 }
 tbody tr:hover {
-  background: #cfd8dc;
+  background: rgba(0, 0, 0, 0.2);
 }
 td.numbers,
 .numbers td {
@@ -635,5 +635,61 @@ h2 + .progress {
 @media screen and (max-height: 400px) {
   .chat {
     display: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body,
+  aside {
+    color: #cfd8dc;
+    background: #334249;
+  }
+  h1 {
+    color: #212121;
+  }
+
+  a {
+    border-bottom-color: #cfd8dc;
+  }
+
+  a:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .chat,
+  .timer,
+  input {
+    background: #192024;
+    color: #cfd8dc;
+  }
+
+  .timer {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+  }
+
+  .modal-content {
+    background: #334249;
+  }
+  .timer-bar.colorless {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .page-overlay {
+    background: rgba(36, 46, 51, 0.75); /* #607d8b blue-grey */
+  }
+  .announce em {
+    background: #192024;
+  }
+
+  .announce hr {
+    border-bottom: 1px solid rgb(96, 125, 139);
+  }
+
+  #sidebarnag {
+    color: #212121;
+    background: rgba(255, 255, 255, 0.9);
+  }
+  #sidebarnag::after {
+    border-bottom-color: rgba(255, 255, 255, 0.9);
   }
 }
