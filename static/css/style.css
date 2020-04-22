@@ -639,58 +639,56 @@ h2 + .progress {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  body,
-  aside {
-    color: #cfd8dc;
-    background: #334249;
-  }
-  h1 {
-    color: #212121;
-  }
+body.dark,
+.dark aside {
+  color: #cfd8dc;
+  background: #334249;
+}
+.dark h1 {
+  color: #212121;
+}
 
-  a {
-    border-bottom-color: #cfd8dc;
-  }
+.dark a {
+  border-bottom-color: #cfd8dc;
+}
 
-  a:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
+.dark a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
 
-  .chat,
-  .timer,
-  input {
-    background: #192024;
-    color: #cfd8dc;
-  }
+.dark .chat,
+.dark .timer,
+.dark input {
+  background: #192024;
+  color: #cfd8dc;
+}
 
-  .timer {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
-  }
+.dark .timer {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+}
 
-  .modal-content {
-    background: #334249;
-  }
-  .timer-bar.colorless {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
+.dark .modal-content {
+  background: #334249;
+}
+.dark .timer-bar.colorless {
+  background-color: rgba(255, 255, 255, 0.1);
+}
 
-  .page-overlay {
-    background: rgba(36, 46, 51, 0.75); /* #607d8b blue-grey */
-  }
-  .announce em {
-    background: #192024;
-  }
+.dark .page-overlay {
+  background: rgba(36, 46, 51, 0.75); /* #607d8b blue-grey */
+}
+.dark .announce em {
+  background: #192024;
+}
 
-  .announce hr {
-    border-bottom: 1px solid rgb(96, 125, 139);
-  }
+.dark .announce hr {
+  border-bottom: 1px solid rgb(96, 125, 139);
+}
 
-  #sidebarnag {
-    color: #212121;
-    background: rgba(255, 255, 255, 0.9);
-  }
-  #sidebarnag::after {
-    border-bottom-color: rgba(255, 255, 255, 0.9);
-  }
+.dark #sidebarnag {
+  color: #212121;
+  background: rgba(255, 255, 255, 0.9);
+}
+.dark #sidebarnag::after {
+  border-bottom-color: rgba(255, 255, 255, 0.9);
 }

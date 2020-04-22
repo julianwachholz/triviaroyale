@@ -14,6 +14,20 @@
     modalTimeout,
     timerTimeout;
 
+  (function () {
+    if (
+      localStorage.getItem("darkmode") === null &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      localStorage.setItem("darkmode", "true");
+      document.body.classList.add("dark");
+    }
+    if (localStorage.getItem("darkmode") === "true") {
+      document.body.classList.add("dark");
+    }
+  })();
+
   ws.addEventListener("open", function (event) {
     var playername, password;
     pagestatus.innerHTML = "<p>Connected! :)</p>";
@@ -562,6 +576,12 @@
       localStorage.removeItem("playername");
       localStorage.removeItem("password");
       window.location.reload();
+    });
+    theme.addEventListener("click", function (event) {
+      event.preventDefault();
+      var current = localStorage.getItem("darkmode") === "true";
+      localStorage.setItem("darkmode", !current);
+      document.body.classList.toggle("dark");
     });
 
     /**
