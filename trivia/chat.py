@@ -47,6 +47,9 @@ async def notify_online_player(name):
     """Send a Pushover notification that a player is online."""
     global last_notified
 
+    if os.getenv("ADMIN_NICK", None) == name:
+        return
+
     delay = 60 * 15  # 15 minutes
     if last_notified is None or last_notified + delay < time.time():
         send_pushover(f"Player {name} is now online!")
