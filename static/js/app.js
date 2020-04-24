@@ -679,6 +679,8 @@
       modal.classList.contains("hidden")
     ) {
       chatinput.focus();
+    } else if (!modal.classList.contains("hidden") && event.keyCode === 27) {
+      modalclose.click();
     }
   });
 })(window, document);
