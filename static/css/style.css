@@ -264,6 +264,7 @@ footer div {
   display: flex;
   justify-content: center;
   flex-direction: column;
+  user-select: none;
 }
 .question-container p {
   text-align: center;
