@@ -165,6 +165,14 @@
     playerList = players;
   }
 
+  window.randomnick = function () {
+    ajax("/randomnick", {}, function (res) {
+      var data = JSON.parse(res);
+      document.getElementById("login").value = data.nickname;
+      _paq.push(["trackEvent", "Game", "Login", "RandomNick"]);
+    });
+  };
+
   window.showModal = function (modalId, data) {
     modalform.classList.remove("hidden");
     modalclose.classList.add("hidden");
@@ -183,9 +191,9 @@
         text += "<p>Please choose your player name below.</p>";
         modaltext.innerHTML = text;
         modalinputs.innerHTML =
-          '<div class="form-input">' +
+          '<div class="form-input flex">' +
           '<input type="text" name="login" id="login" maxlength="30" autofocus required>' +
-          '<label for="login">Nickname</label></div>';
+          '<label for="login">Nickname</label><button type="button" class="flat" onclick="randomnick()">Randomize?</button></div>';
         modalcancel.classList.add("hidden");
         modalsubmit.innerHTML = "Play now!";
         break;

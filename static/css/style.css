@@ -141,7 +141,8 @@ button,
   background: #009688;
 }
 button:hover,
-.button:hover {
+.button:hover,
+.dark .button:hover {
   background: #00897b;
 }
 button.flat,
@@ -412,6 +413,9 @@ select:focus {
   position: relative;
   margin-top: 1rem;
 }
+.flex {
+  display: flex;
+}
 .form-input label {
   color: #9e9e9e;
   position: absolute;
@@ -648,10 +652,18 @@ h2 + .progress {
 
 body.dark,
 .dark input,
+.dark button.flat,
+.dark .button.flat,
 .dark aside {
   color: #cfd8dc;
   background: #334249;
 }
+
+.dark button.flat:hover,
+.dark .button.flat:hover {
+  background: #212121;
+}
+
 .dark h1 {
   color: #212121;
 }

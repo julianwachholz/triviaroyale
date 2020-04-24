@@ -6,6 +6,7 @@ import os
 
 from flask import Flask, abort, redirect, render_template, request, url_for
 from pony.orm import count, db_session, left_join
+from random_username.generate import generate_username
 from raven.contrib.flask import Sentry
 
 from trivia.helpers import format_number, get_week_tuple, timesince
@@ -242,6 +243,16 @@ def highscores(year=None, month=None, day=None, week=None):
         today=today,
         highscores=highscores[:10],
     )
+
+
+@app.route("/randomnick", methods=["POST"])
+def random_nickname():
+    """
+    Generate a random nickname for a new player.
+
+    """
+    nickname = generate_username()
+    return {"nickname": nickname[0]}
 
 
 db.bind(
