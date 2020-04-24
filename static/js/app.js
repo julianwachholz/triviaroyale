@@ -643,7 +643,10 @@
   window.addEventListener("load", function () {
     body.classList.remove("hidden");
 
-    if (window.location.search.includes("newname=1")) {
+    if (
+      localStorage.getItem("username") !== null &&
+      window.location.search.includes("newname=1")
+    ) {
       history.replaceState(null, "TriviaRoyale", "/");
       showModal("newname");
     }
