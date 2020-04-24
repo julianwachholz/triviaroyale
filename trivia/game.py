@@ -179,7 +179,16 @@ class TriviaGame(object):
             played_round.end_round()
             self.round = played_round
 
-        asyncio.ensure_future(self.send(ws, {"setinfo": player_db.get_recent_scores()}))
+        asyncio.ensure_future(
+            self.send(
+                ws,
+                {
+                    "setinfo": player_db.get_recent_scores(),
+                    # track conversion goal for round solved
+                    "log_event": ["trackGoal", 1],
+                },
+            )
+        )
 
         asyncio.ensure_future(self.round_end())
         logger.info(

@@ -127,6 +127,10 @@
         }
       }
     }
+    if (data.log_event) {
+      console.log("_paq.push", data.log_event);
+      _paq.push(data.log_event);
+    }
   }
 
   ws.open();
