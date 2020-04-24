@@ -262,6 +262,7 @@ class GameController(object):
             "3. Play honestly and fair, no cheating by looking up answers on Google, Wikipedia etc. or any other medium.\
                 This is not a contest on who googles the quickest.",
             "4. Be nice, don't swear or be rude. Site bans will be applied if required.",
+            "Bonus Tip: Use your arrow keys to quickly get your previous message input back to fix a typo!",
         ]
         asyncio.ensure_future(self.send(ws, [{"system": line} for line in rules]))
 
