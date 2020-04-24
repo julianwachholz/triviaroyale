@@ -117,6 +117,7 @@
           // logged in successfully
           changename.innerHTML = "Change name";
           changepassword.classList.remove("hidden");
+          logout.classList.remove("hidden");
           localStorage.setItem("playername", data.setinfo[key]);
           chatinput.disabled = false;
           chatinput.focus();
