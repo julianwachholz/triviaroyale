@@ -392,13 +392,24 @@
           "</em></span>";
       } else {
         text =
-          "<strong>TriviaRoyale:</strong> " + formatText(escapeHTML(opts.text));
+          '<span class="nickname">TriviaRoyale</span> ' +
+          formatText(escapeHTML(opts.text));
         if (!!opts.unescaped) {
           text += " " + opts.unescaped;
         }
       }
     } else {
-      text = escapeHTML(opts.player) + ": " + formatText(escapeHTML(opts.text));
+      var onclick =
+        "showModal('ajax', '/stats/user/?name=" +
+        encodeURIComponent(opts.player) +
+        "')";
+      text =
+        '<a onclick="' +
+        onclick +
+        '" class="nickname">' +
+        escapeHTML(opts.player) +
+        "</a> " +
+        formatText(escapeHTML(opts.text));
       if (!!opts.time) {
         tstamp = new Date(1000 * opts.time);
       }

@@ -221,7 +221,7 @@ class Player(db.Entity):
 
     """
 
-    NAME_MAX_LEN = 40
+    NAME_MAX_LEN = 30
     BCRYPT_ROUNDS = 11
     PERMISSIONS = [
         "__EVERYTHING__",
