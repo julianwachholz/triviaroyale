@@ -72,7 +72,9 @@
     {% endif %}
     {% if mode == 'year' %}
       <select name="dt" id="dt">
-        <option>2015</option>
+        {% for year in range(2017, today.year + 1) %}
+          <option{% if dt.year == year %} selected{% endif %}>{{ year }}</option>
+        {% endfor %}
       </select>
       <label for="dt">Select Year</label></div>
     {% endif %}

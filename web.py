@@ -22,7 +22,7 @@ if "SENTRY_DSN" in os.environ:
 
 WS_ADDR = os.environ.get("WS_ADDR", "ws://localhost:8080")
 
-EARLIEST_DATE = datetime.date(2015, 3, 21)
+EARLIEST_DATE = datetime.date(2017, 5, 22)
 
 
 @app.route("/")
