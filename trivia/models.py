@@ -247,7 +247,7 @@ class Player(db.Entity):
         return "{} (#{})".format(self.name, self.id)
 
     def logged_in(self):
-        self.last_played = datetime.now()
+        self.last_played = datetime.utcnow()
 
     def has_password(self):
         return bool(self.password_hash)
@@ -286,7 +286,7 @@ class Player(db.Entity):
     @db_session
     def get_stats(self, dt=None):
         if dt is None:
-            dt = datetime.now().date()
+            dt = datetime.utcnow().date()
 
         dt_week = get_week_tuple(dt)
         dt_month = dt.replace(day=1)
@@ -305,7 +305,7 @@ class Player(db.Entity):
             if r.solver == self
         )
 
-        r = datetime.now()  # dummy for use in lambdas below
+        r = datetime.utcnow()  # dummy for use in lambdas below
         day = q.filter(lambda: r.start_time.date() == dt).get()
         week = q.filter(
             lambda: r.start_time >= dt_week[0] and r.start_time <= dt_week[1]
@@ -330,7 +330,7 @@ class Player(db.Entity):
         Get this player's most recent scores.
 
         """
-        now = datetime.now()
+        now = datetime.utcnow()
 
         stats = get(
             (
@@ -386,7 +386,7 @@ class Round(db.Entity):
     def solved_by(self, player, total_time, hints=0, streak=1):
         self.solved = True
         self.solver = player
-        self.time_taken = datetime.now().timestamp() - self.start_time.timestamp()
+        self.time_taken = datetime.utcnow().timestamp() - self.start_time.timestamp()
         self.points = self.question.calculate_points(
             self.time_taken / total_time, hints, streak
         )
@@ -398,7 +398,7 @@ class Round(db.Entity):
 
         """
         self.question.set(
-            last_played=datetime.now(), times_played=self.question.times_played + 1
+            last_played=datetime.utcnow(), times_played=self.question.times_played + 1
         )
         if self.solved:
             self.question.set(times_solved=self.question.times_solved + 1)

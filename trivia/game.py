@@ -240,7 +240,7 @@ class TriviaGame(object):
             self.state = self.STATE_STARTING
             wait = self.WAIT_TIME_NEW_ROUND
             self.timer_start = time.time()
-            self.round_start = datetime.now()
+            self.round_start = datetime.utcnow()
             self._reset_streak()
             self.broadcast_info()
         else:
@@ -268,7 +268,7 @@ class TriviaGame(object):
             try:
                 new_round = Round.new(self.round_start)
             except IndexError:
-                self.round_start = datetime.now()
+                self.round_start = datetime.utcnow()
                 new_round = Round.new(self.round_start)
             commit()
             self.round = new_round

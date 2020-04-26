@@ -27,7 +27,7 @@ EARLIEST_DATE = datetime.date(2015, 3, 21)
 
 @app.route("/")
 def index():
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     return render_template("index.html", WS_ADDR=WS_ADDR, now=now)
 
 
@@ -104,7 +104,7 @@ def highscore_search():
 def url_for_highscore(mode, dt):
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         return None
-    now = datetime.datetime.now().date()
+    now = datetime.datetime.utcnow().date()
 
     if mode == "year":
         if EARLIEST_DATE.year <= dt.year <= now.year:
@@ -170,7 +170,7 @@ def highscores(year=None, month=None, day=None, week=None):
     subtitle = None
     dt, f = None, None
 
-    today = datetime.datetime.now().date()
+    today = datetime.datetime.utcnow().date()
     r = today  # dummy for filter lambdas
 
     # daily highscores

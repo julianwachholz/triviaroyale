@@ -55,7 +55,7 @@ def timesince(d, now=None, reversed=False):
         now = datetime.datetime(now.year, now.month, now.day)
 
     if not now:
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
 
     delta = (d - now) if reversed else (now - d)
     # ignore microseconds
