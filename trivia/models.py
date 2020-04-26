@@ -308,7 +308,8 @@ class Player(db.Entity):
         r = datetime.utcnow()  # dummy for use in lambdas below
         day = q.filter(lambda: r.start_time.date() == dt).get()
         week = q.filter(
-            lambda: r.start_time >= dt_week[0] and r.start_time <= dt_week[1]
+            lambda: r.start_time.date() >= dt_week[0]
+            and r.start_time.date() <= dt_week[1]
         ).get()
         month = q.filter(
             lambda: r.start_time.year == dt.year and r.start_time.month == dt.month

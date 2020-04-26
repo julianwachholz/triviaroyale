@@ -186,7 +186,7 @@ def highscores(year=None, month=None, day=None, week=None):
         dt, dt_week_end = get_week_tuple(
             datetime.date(year, 1, 1) + datetime.timedelta(weeks=week - 1)
         )
-        f = lambda: r.start_time >= dt and r.start_time <= dt_week_end
+        f = lambda: r.start_time.date() >= dt and r.start_time.date() <= dt_week_end
         title = "Week {}, {}".format(dt.isocalendar()[1], dt.isocalendar()[0])
 
         end_fmt = " - %B %d" if dt.month != dt_week_end.month else "-%d"
@@ -267,4 +267,4 @@ db.generate_mapping()
 
 if __name__ == "__main__":
     host = os.environ.get("LISTEN_IP", "127.0.0.1")
-    app.run(host=host, port=8000, debug=True)
+    app.run(host=host, port=8000)
