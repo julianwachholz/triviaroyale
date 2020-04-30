@@ -89,10 +89,19 @@ summary {
   z-index: 1;
   text-align: center;
   background: #4db6ac;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-.page-header h1 {
-  line-height: 50px;
+.page-header svg {
+  margin-right: 10px;
+}
+.page-header svg path {
+  fill: #ffffff;
+}
+.dark .page-header svg path {
+  fill: #212121;
 }
 
 a {
