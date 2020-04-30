@@ -4,7 +4,15 @@ import calendar
 import datetime
 import os
 
-from flask import Flask, abort, redirect, render_template, request, url_for
+from flask import (
+    Flask,
+    abort,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
+)
 from pony.orm import count, db_session, left_join
 from random_username.generate import generate_username
 from raven.contrib.flask import Sentry
@@ -253,6 +261,12 @@ def random_nickname():
     """
     nickname = generate_username()
     return {"nickname": nickname[0]}
+
+
+@app.route("/robots.txt")
+@app.route("/sw.js")
+def static_root():
+    return send_from_directory("static/root", request.path[1:])
 
 
 db.bind(

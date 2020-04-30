@@ -22,7 +22,7 @@
       href="https://fonts.googleapis.com/css?family=Roboto:400,300,500"
     />
     <link rel="stylesheet" href="/static/css/style.css?v2.7" />
-    <link rel="stylesheet" href="/static/css/vendor.css?v2.2" />
+    <link rel="stylesheet" href="/static/css/vendor.css?v2.7" />
     <script type="text/javascript">
       var _paq = _paq || [];
       _paq.push(["trackPageView"]);
@@ -151,6 +151,13 @@
       var WS_ADDR = "{{ WS_ADDR }}";
     </script>
     <script src="/static/reconnecting-websocket.min.js"></script>
-    <script src="/static/js/app.js?v2.6"></script>
+    <script src="/static/js/app.js?v2.7"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js", { scope: "/" })
+          .then(function (registration) {});
+      }
+    </script>
   </body>
 </html>
