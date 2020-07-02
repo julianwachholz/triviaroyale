@@ -572,6 +572,10 @@
       }
     });
     chatinput.addEventListener("keydown", inputHistory());
+    chatinput.addEventListener("paste", function (event) {
+      event.preventDefault();
+      return false;
+    });
 
     menu.addEventListener("click", function (event) {
       event.preventDefault();
