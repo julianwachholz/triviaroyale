@@ -280,5 +280,6 @@ db.generate_mapping()
 
 
 if __name__ == "__main__":
-    host = os.environ.get("LISTEN_IP", "127.0.0.1")
-    app.run(host=host, port=8000)
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host=host, port=port)
