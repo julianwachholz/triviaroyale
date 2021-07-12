@@ -3,6 +3,12 @@ services:
   db:
     image: postgres:12.1
 
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+
   web:
     image: trivia
     build:
@@ -12,6 +18,8 @@ services:
     volumes:
       - .:/app
     env_file: .env
+    environment:
+      PORT: 8000
     ports:
       - 8060:8000
       - 8061:8080
@@ -25,5 +33,7 @@ services:
       - .:/app
     command: python app.py
     env_file: .env
+    environment:
+      PORT: 8180
     ports:
       - 8180:8180
