@@ -181,18 +181,18 @@
     switch (modalId) {
       case "welcome":
         modalcommand.value = "login";
-        var text = "<h2>Welcome to TriviaRoyale!</h2>";
-        text += "<p>Play rounds of trivia questions against other players.";
-        text +=
-          "The first to correctly enter the answer in the chat wins points! Climb to the top of the highscores!</p>";
-        text +=
-          "<p>Be square, play fair: No cheating by looking up answers elsewhere!</p>";
-        text +=
-          "<p>Read the full rules by entering the <kbd>/rules</kbd> command. Enter <kbd>/help</kbd> for more.</p>";
-        text += "<p>Please choose your player name below.</p>";
+        var text =
+          '<img src="/static/img/icon192.png" alt="TriviaRoyale Logo" width="86" height="86">' +
+          "<h2>Welcome to TriviaRoyale!</h2>" +
+          "<p>Play rounds of trivia questions against other players. " +
+          "The first to correctly enter the answer in the chat wins points!</p>" +
+          "<p>Please read the rules by entering the <kbd>/rules</kbd> command. Enter <kbd>/help</kbd> for more.</p>" +
+          '<a target="_blank" href="https://twitter.com/triviaroyaleio" class="button" style="display:inline-flex;align-items:center;height:40px;">' +
+          '<svg width="24" height="24" fill="currentColor" style="margin-right:.5rem" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24 4.6a10 10 0 0 1-2.9.7 5 5 0 0 0 2.2-2.7c-1 .6-2 1-3.1 1.2a5 5 0 0 0-8.4 4.5A14 14 0 0 1 1.6 3.2 4.8 4.8 0 0 0 1 5.6a5 5 0 0 0 2.2 4.1 4.9 4.9 0 0 1-2.3-.6A5 5 0 0 0 5 14a5 5 0 0 1-2.2 0 5 5 0 0 0 4.6 3.5 9.9 9.9 0 0 1-6.1 2.1H0a14 14 0 0 0 7.6 2.2c9 0 14-7.5 14-14V7A10 10 0 0 0 24 4.6z"/></svg>' +
+          "Follow us on Twitter</a>";
         modaltext.innerHTML = text;
         modalinputs.innerHTML =
-          '<div class="form-input flex">' +
+          '<p>Please choose your player name below.</p><div class="form-input flex">' +
           '<input type="text" name="login" id="login" maxlength="30" autofocus required>' +
           '<label for="login">Nickname</label><button type="button" class="flat" onclick="randomnick()">Randomize?</button></div>';
         modalcancel.classList.add("hidden");
@@ -616,7 +616,10 @@
      * Load links in modal inside the modal itself.
      */
     modal.addEventListener("click", function (event) {
-      if (!!event.target.href || !!event.target.parentNode.href) {
+      if (
+        !event.target.target &&
+        (!!event.target.href || !!event.target.parentNode.href)
+      ) {
         event.preventDefault();
         showModal("ajax", event.target.href || event.target.parentNode.href);
       }

@@ -109,6 +109,11 @@ class TriviaGame(object):
             game = (
                 "<p>TriviaRoyale is not running.</p>"
                 '<p><button class="z4" onclick="command(\'start\')">Start new round</button></p>'
+                '<p>Coming soon: <strong>TriviaRoyale 2.0!</strong></p>'
+                '<p><a href="https://twitter.com/triviaroyaleio" target="_blank" class="button" style="display:inline-flex;align-items:center;height:40px;">'
+                '<svg width="24" height="24" fill="currentColor" style="margin-right:.5rem" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24 4.6a10 10 0 0 1-2.9.7 5 5 0 0 0 2.2-2.7c-1 .6-2 1-3.1 1.2a5 5 0 0 0-8.4 4.5A14 14 0 0 1 1.6 3.2 4.8 4.8 0 0 0 1 5.6a5 5 0 0 0 2.2 4.1 4.9 4.9 0 0 1-2.3-.6A5 5 0 0 0 5 14a5 5 0 0 1-2.2 0 5 5 0 0 0 4.6 3.5 9.9 9.9 0 0 1-6.1 2.1H0a14 14 0 0 0 7.6 2.2c9 0 14-7.5 14-14V7A10 10 0 0 0 24 4.6z"/></svg>'
+                'Follow us to get notified!'
+                '</a></p>'
             )
 
         elif self.state == self.STATE_STARTING:

@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: trivia
+    image: trivia-web
     build:
       context: .
       dockerfile: ./web.dockerfile
@@ -25,7 +25,7 @@ services:
       - 8061:8080
 
   api:
-    image: trivia
+    image: trivia-api
     build:
       context: .
       dockerfile: ./app.dockerfile

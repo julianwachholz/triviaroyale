@@ -496,6 +496,9 @@ select:focus {
 .modal-content h2 {
   max-width: calc(100vw - 100px);
 }
+.modal-content p {
+  margin-top: 0.4em;
+}
 .modal-content dt {
   float: none;
 }
