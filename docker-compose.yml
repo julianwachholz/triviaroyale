@@ -10,11 +10,11 @@ services:
     restart: unless-stopped
 
   web:
-    image: trivia-web
+    image: trivia
     build:
       context: .
-      dockerfile: ./web.dockerfile
-      target: dev
+      dockerfile: ./Dockerfile
+    command: python web.py
     volumes:
       - .:/app
     env_file: .env
@@ -25,13 +25,13 @@ services:
       - 8061:8080
 
   api:
-    image: trivia-api
+    image: trivia
     build:
       context: .
-      dockerfile: ./app.dockerfile
+      dockerfile: ./Dockerfile
+    command: python app.py
     volumes:
       - .:/app
-    command: python app.py
     env_file: .env
     environment:
       PORT: 8180
