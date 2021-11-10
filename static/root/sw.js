@@ -1,11 +1,11 @@
 self.addEventListener("install", function (e) {
   e.waitUntil(
-    caches.open("v2.8").then(function (cache) {
+    caches.open("v2.9").then(function (cache) {
       return cache.addAll([
         "/",
-        "/static/css/style.css?v2.8",
-        "/static/css/vendor.css?v2.8",
-        "/static/js/app.js?v=2.8",
+        "/static/css/style.css?v2.9",
+        "/static/css/vendor.css?v2.9",
+        "/static/js/app.js?v=2.9",
         "/static/reconnecting-websocket.min.js",
         "/static/img/icon.svg",
         "/static/img/icon192.png",
