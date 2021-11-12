@@ -1,11 +1,12 @@
+const cacheVersion = "v2.10";
+
 self.addEventListener("install", function (e) {
   e.waitUntil(
-    caches.open("v2.9").then(function (cache) {
+    caches.open(cacheVersion).then(function (cache) {
       return cache.addAll([
-        "/",
-        "/static/css/style.css?v2.9",
-        "/static/css/vendor.css?v2.9",
-        "/static/js/app.js?v=2.9",
+        "/static/css/style.css?" + cacheVersion,
+        "/static/css/vendor.css?" + cacheVersion,
+        "/static/js/app.js?" + cacheVersion,
         "/static/reconnecting-websocket.min.js",
         "/static/img/icon.svg",
         "/static/img/icon192.png",
@@ -13,6 +14,24 @@ self.addEventListener("install", function (e) {
       ]);
     })
   );
+});
+
+self.addEventListener("activate", function (e) {
+  e.waitUntil(
+    caches.keys().then(function (keys) {
+      return Promise.all(
+        keys
+          .filter(function (key) {
+            return key !== cacheVersion;
+          })
+          .map(function (key) {
+            return caches.delete(key);
+          })
+      );
+    })
+  ).then(function () {
+    return clients.claim();
+  });
 });
 
 self.addEventListener("fetch", function (e) {

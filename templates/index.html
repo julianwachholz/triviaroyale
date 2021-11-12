@@ -26,8 +26,8 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css?family=Roboto:400,300,500"
     />
-    <link rel="stylesheet" href="/static/css/style.css?v2.9" />
-    <link rel="stylesheet" href="/static/css/vendor.css?v2.9" />
+    <link rel="stylesheet" href="/static/css/style.css?v2.10" />
+    <link rel="stylesheet" href="/static/css/vendor.css?v2.10" />
 
     <meta
       property="og:title"
@@ -182,13 +182,11 @@
       var WS_ADDR = "{{ WS_ADDR }}";
     </script>
     <script src="/static/reconnecting-websocket.min.js"></script>
-    <script src="/static/js/app.js?v2.9"></script>
+    <script src="/static/js/app.js?v2.10"></script>
     <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("/sw.js?v2.9", { scope: "/" })
-          .then(function (registration) {});
-      }
+      navigator.serviceWorker
+        .register("/sw.js?v2.10", { scope: "/" })
+        .then(function (registration) {});
     </script>
   </body>
 </html>

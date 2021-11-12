@@ -83,6 +83,24 @@ summary {
   font-size: 1.2em;
 }
 
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 0.2em;
+}
+.button.tiny.inline-flex {
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+}
+.flex {
+  display: flex;
+  column-gap: 10px;
+}
+.flex.center {
+  justify-content: center;
+}
+
 .page-header {
   height: 50px;
   position: relative;
