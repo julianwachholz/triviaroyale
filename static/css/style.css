@@ -88,17 +88,18 @@ summary {
   height: 16px;
   margin-right: 0.2em;
 }
-.button.tiny.inline-flex {
+.button.tiny.social {
   height: 35px;
   display: inline-flex;
   align-items: center;
 }
-.flex {
-  display: flex;
-  column-gap: 10px;
-}
-.flex.center {
-  justify-content: center;
+
+@media (min-width: 481px) {
+  .social-flex {
+    display: flex;
+    column-gap: 10px;
+    justify-content: center;
+  }
 }
 
 .page-header {

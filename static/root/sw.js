@@ -1,4 +1,4 @@
-const cacheVersion = "v2.10";
+const cacheVersion = "v2.11";
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
