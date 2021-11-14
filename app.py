@@ -4,7 +4,9 @@ import asyncio
 import json
 import logging
 import os
+import random
 import ssl
+from itertools import cycle
 
 import websockets
 
@@ -73,6 +75,33 @@ async def broadcast(message):
         await ws.send(message)
 
 
+async def promote():
+    """Promote the new update from time to time."""
+    promo_texts = cycle([
+        "Enjoying the game? Don't miss our big upcoming update!",
+        "Coming soon: All new TriviaRoyale 2.0 - ",
+        "Bigger, better, stronger: TriviaRoyale 2.0 launching soon!",
+        "Launching soon: Huge new update with better questions for all!",
+    ])
+    promo_links = cycle([
+        ('newsletter','<a href="https://beta.triviaroyale.io/blog/subscribe/" target="_blank">Subscribe to our Newsletter!</a>'),
+        ('twitter', '<a href="https://twitter.com/triviaroyaleio" target="_blank">Follow us on Twitter!</a>'),
+    ])
+
+    await asyncio.sleep(60)
+    while True:
+        promo_text = next(promo_texts)
+        promo_link = next(promo_links)
+        logger.info("Promote: {}: {}".format(promo_text, promo_link[0]))
+
+        await broadcast({
+            "system": promo_text,
+            "system_extra": promo_link[1],
+        })
+        # Plug every 5 to 10 minutes
+        await asyncio.sleep(random.randint(300, 600))
+
+
 if __name__ == "__main__":
     listen_ip = os.environ.get("HOST", "localhost")
     listen_port = 8180
@@ -101,5 +130,6 @@ if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(server)
+    loop.run_until_complete(promote())
     loop.run_until_complete(trivia.run())
     loop.run_forever()
