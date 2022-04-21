@@ -1,5 +1,5 @@
 flask==1.1.2
-websockets==8.1
+websockets==9.1
 flask-wtf==0.14.3
 pony==0.7.13
 psycopg2-binary==2.8.5
